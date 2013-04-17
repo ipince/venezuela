@@ -137,8 +137,8 @@ for state_link in itertools.islice(state_links, 0, iterend):
         print "\t\t\tProcessing CENTER: " + center
         parse(url_root + center_links[center])
 #        muni_dict[muni_link][parish][center]  = extract_votes(parse(url_root + center_links[center]))
-  votes[state_link] = muni_dict
+#  votes[state_link] = muni_dict
 
-write_to_file(votes)
+#write_to_file(votes)
 
 
