@@ -186,12 +186,14 @@ states = data[1]['state']
 centers = data[1]['center']
 tables = data[0]['table']
 
-filter_uncounted(tables)
+print "Filtering 7O"
+filter_uncounted(data[0]['table'])
 
-#for state in states:
-#  print state + ": " + repr(states[state])
+print "Filtering 14A"
+filter_uncounted(data[1]['table'])
 
-print "num centers: " + str(len(data[0]['center']))
+print "num centers 7O: " + str(len(data[0]['center']))
+print "num centers 14A: " + str(len(data[1]['center']))
 
 #print "Center with no scrutinized votes:"
 #for code in centers:
@@ -200,15 +202,32 @@ print "num centers: " + str(len(data[0]['center']))
 
 def count_zeros(votes, dim):
   print "%s got 0 votes in the following tables:" % dim
+  codes = set()
   count = 0
   for code in votes:
     if votes[code][dim] == 0:
       print code + ": " + repr(votes[code])
+      codes.add(code)
       count += 1
   print "Total of %d tables" % count
+  return codes
 
-count_zeros(tables, 'capriles')
+maduro_dom_tables = count_zeros(data[1]['table'], 'capriles')
+chavez_dom_tables = count_zeros(data[0]['table'], 'capriles')
 count_zeros(tables, 'gov')
+
+maduro_dom_chavez_not = maduro_dom_tables.difference(chavez_dom_tables)
+print "Maduro dominated in %d tables that Chavez did not" % len(maduro_dom_chavez_not)
+for code in maduro_dom_chavez_not:
+  print data[0]['table'][code]
+
+print "Tables in 7O where voting voters does not match scrutinized votes"
+count = 0
+for code in data[0]['table']:
+  if data[0]['table'][code]['voting_voters'] != data[0]['table'][code]['scrut_votes']:
+    print data[0]['table'][code]
+    count += 1
+print "Toal of %d tables" % count
 
 max_table = 0
 for code in tables:
