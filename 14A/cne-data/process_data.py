@@ -6,37 +6,39 @@ from collections import defaultdict
 
 debug = False
 
-STATE_CODE_IDX = 0
-STATE_NAME_IDX = 1
-CENTER_CODE_OLD_IDX = 8
-CENTER_CODE_NEW_IDX = 9
-CENTER_NAME_IDX = 6
-TABLE_IDX = 10
+indeces_14a = {
+  'state_code': 0,
+  'state_name': 1,
+  'center_code_old': 8,
+  'center_code_new': 9,
+  'center_name': 6,
+  'table': 10,
 
-SCRUT_VOTES_IDX = 18
-VALID_VOTES_IDX = 19
-NULL_VOTES_IDX = 17
-MADURO_IDX = 11
-CAPRILES_IDX = 12
+  'voters': 21,
+  'scrut_votes': 18,
+  'valid_votes': 19,
+  'null_votes': 17,
+  'abstention': 20,
+  
+  'maduro': 11,
+  'capriles': 12,
+}
 
-ABSTENTION_IDX = 20
-BOOK_TOTAL_IDX = 21
-
-def add_votes(totals, row):
-  totals['scrutinized'] += int(row[SCRUT_VOTES_IDX])
-  totals['valid'] += int(row[VALID_VOTES_IDX])
-  totals['null'] += int(row[NULL_VOTES_IDX])
-  totals['maduro'] += int(row[MADURO_IDX])
-  totals['capriles'] += int(row[CAPRILES_IDX])
+def add_votes(totals, row, indeces):
+  totals['scrutinized'] += int(row[indeces['scrut_votes']])
+  totals['valid'] += int(row[indeces['valid_votes']])
+  totals['null'] += int(row[indeces['null_votes']])
+  totals['maduro'] += int(row[indeces['maduro']])
+  totals['capriles'] += int(row[indeces['capriles']])
   try:
-    totals['voters'] += int(row[BOOK_TOTAL_IDX])
+    totals['voters'] += int(row[indeces['voters']])
   except ValueError:
     if debug: print row
 
 def rounded_pct(num, den):
-  return int(100 * float(num) / float(den))
+  return int(round(100 * float(num) / float(den)))
 
-def process_csv():
+def process_csv(indeces):
   csv_file = open('esdata_resultados_elecc_2013-04-14-v1_2.csv', 'rb')
   csv_reader = csv.reader(csv_file)
 
@@ -54,34 +56,34 @@ def process_csv():
       first_row = False
       continue  # skip header row
 
-    if row[STATE_CODE_IDX] == '' or row[STATE_CODE_IDX] == '99': # null and Embajadas
+    if row[indeces['state_code']] == '' or row[indeces['state_code']] == '99': # null and Embajadas
       print "Ignoring: " + repr(row)
       num_ignored += 1
       continue
 
     # add to grand totals
-    add_votes(totals, row)
+    add_votes(totals, row, indeces)
     # aggregate by state
-    state_code = str.zfill(row[STATE_CODE_IDX], 2)
+    state_code = str.zfill(row[indeces['state_code']], 2)
     if state_code not in states:
       states[state_code] = defaultdict(int)
-      states[state_code]['name'] = row[STATE_NAME_IDX]
-    add_votes(states[state_code], row)
+      states[state_code]['name'] = row[indeces['state_name']]
+    add_votes(states[state_code], row, indeces)
 
     # aggregate by center
-    center_code = str.zfill(row[CENTER_CODE_NEW_IDX], 9)
+    center_code = str.zfill(row[indeces['center_code_new']], 9)
     if center_code not in centers:
       centers[center_code] = defaultdict(int)
-      centers[center_code]['name'] = row[CENTER_NAME_IDX]
-    add_votes(centers[center_code], row)
+      centers[center_code]['name'] = row[indeces['center_name']]
+    add_votes(centers[center_code], row, indeces)
     itr += 1
 
     # aggregate by table
-    table_code = center_code + "." + row[TABLE_IDX]
+    table_code = center_code + "." + row[indeces['table']]
     if table_code not in tables:
       tables[table_code] = defaultdict(int)
-      tables[table_code]['name'] = row[CENTER_NAME_IDX] + "-" + row[TABLE_IDX]
-    add_votes(tables[table_code], row)
+      tables[table_code]['name'] = row[indeces['center_name']] + "-" + row[indeces['table']]
+    add_votes(tables[table_code], row, indeces)
 
   # calculate participation rates
   for state in states:
@@ -93,7 +95,7 @@ def process_csv():
   return [totals, states, centers, tables]
 
 
-[totals, states, centers, tables] = process_csv()
+[totals, states, centers, tables] = process_csv(indeces_14a)
 
 print totals
 for state in states:
