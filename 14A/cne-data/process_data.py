@@ -85,7 +85,7 @@ def process_csv(filename, indices):
   num_ignored = 0
   for row in csv_reader:
     if first_row:
-      print "Header is: " + repr(row)
+      logger.info("Header is: " + repr(row))
       first_row = False
       continue  # skip header row
 
@@ -136,6 +136,13 @@ def fill_participation(data, apr14=True):
           rounded_pct(data[level][code]['voting_voters'],
                       data[level][code]['scrut_voters'])
 
+# Copies 'voters' from all values in source to dest.
+def fill_voters(source, dest):
+  for place in source:
+    for code in source[place]:
+      if code in dest[place]:
+        dest[place][code]['voters'] = source[place][code]['voters']
+
 def filter_uncounted(votes):
   topop = list()
   for code in votes:
@@ -177,65 +184,64 @@ def plot_participation_vs(votes, dim):
   plt.scatter(xs, part)
   plt.show()
 
+def compare_places(votes1, votes2):
+  print "There were %d places in t1 and %d in t2" % (len(votes1), len(votes2))
+  codes1 = set(votes1)
+  codes2 = set(votes2)
+  print "The following places existed in t1 but not t2: " + repr(codes1.difference(codes2))
+  print "The following places existed in t2 but not t1: " + repr(codes2.difference(codes1))
+  print "Max voters in t1 is %d and in t2 it is %d" % (max_voters(votes1), max_voters(votes2))
+
+# Finds the max number of voters at a place in the given voting set.
+def max_voters(votes):
+  max_voters = 0
+  for code in votes:
+    max_voters = max(max_voters, votes[code]['voters'])
+  return max_voters
+
+def filter_by(votes, pred, output=False):
+  codes = set()
+  for code in votes:
+    if pred(votes[code]):
+      if output: print code + ": " + repr(votes[code])
+      codes.add(code)
+  return codes
+
+
 data = [process_csv(csv_7o, indices_7o), process_csv(csv_14a, indices_14a)]
 fill_participation(data[1])
 fill_participation(data[0], False)
+# for all places, voters in 2012 match those in 2013 (except maduro, which is negligible)
+fill_voters(data[1], data[0])
 
-totals = data[1]['country']
-states = data[1]['state']
-centers = data[1]['center']
-tables = data[0]['table']
+print
+print "Comparing centers"
+compare_places(data[0]['center'], data[1]['center'])
+print "Comparing tables"
+compare_places(data[0]['table'], data[1]['table'])
 
+print
 print "Filtering 7O"
 filter_uncounted(data[0]['table'])
-
 print "Filtering 14A"
 filter_uncounted(data[1]['table'])
 
-print "num centers 7O: " + str(len(data[0]['center']))
-print "num centers 14A: " + str(len(data[1]['center']))
+print
+print "Tables in 7O where voting voters does not match scrutinized votes: %d" % \
+  len(filter_by(data[0]['table'], lambda v: v['voting_voters'] != v['scrut_votes']))
 
-#print "Center with no scrutinized votes:"
-#for code in centers:
-#  if centers[code]['scrut_votes'] == 0:
-#    print code + ": " + repr(centers[code])
+print
+maduro_dom_tables = filter_by(data[1]['table'], lambda v: v['capriles'] == 0)
+chavez_dom_tables = filter_by(data[0]['table'], lambda v: v['capriles'] == 0)
 
-def count_zeros(votes, dim):
-  print "%s got 0 votes in the following tables:" % dim
-  codes = set()
-  count = 0
-  for code in votes:
-    if votes[code][dim] == 0:
-      print code + ": " + repr(votes[code])
-      codes.add(code)
-      count += 1
-  print "Total of %d tables" % count
-  return codes
-
-maduro_dom_tables = count_zeros(data[1]['table'], 'capriles')
-chavez_dom_tables = count_zeros(data[0]['table'], 'capriles')
-count_zeros(tables, 'gov')
 
 maduro_dom_chavez_not = maduro_dom_tables.difference(chavez_dom_tables)
 print "Maduro dominated in %d tables that Chavez did not" % len(maduro_dom_chavez_not)
 for code in maduro_dom_chavez_not:
   print data[0]['table'][code]
 
-print "Tables in 7O where voting voters does not match scrutinized votes"
-count = 0
-for code in data[0]['table']:
-  if data[0]['table'][code]['voting_voters'] != data[0]['table'][code]['scrut_votes']:
-    print data[0]['table'][code]
-    count += 1
-print "Toal of %d tables" % count
-
-max_table = 0
-for code in tables:
-  max_table = max(max_table, tables[code]['voters'])
-print "max table size: " + str(max_table)
-
+print "Gov got 0 votes in %d tables" % len(filter_by(data[0]['table'], lambda v: v['gov'] == 0))
 #find_zero_participation(tables)
-
 
 #plot_participation(data[1]['table'])
 #plot_participation_vs(data[1]['table'], 'voters')
