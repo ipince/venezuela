@@ -409,6 +409,15 @@ print "Gov got 0 votes in %d tables" % len(filter_by(data[0]['table'], lambda v:
 
 ### Suggested analysis from Choquette.
 
+# Notes from Choquette:
+# TODO(ipince): vote % for each, vs turnout. also vs. total valid votes.
+# per center, per table, per parish.
+
+# TODO(ipince): find people that voted for cap in tables where he got 0 (or <5) votes. If you can find them (and believe them) => there was fraud.
+
+# TODO(ipince): vote % vs. cumulative valid votes.
+# TODO(ipince): do analysis of geographically random centers.
+
 # Graph of candidate % over cumsum(valid-votes)
 
 def cumsum(votes, dim, iter_codes):
@@ -428,8 +437,6 @@ def cumsum_all(votes, iter_codes):
   return { 'valid': cumsum_valid, 'gov': cumsum_gov,
            'cap': cumsum_cap, 'null': cumsum_null }
 
-# calculate cumulative sums
-
 def plot_pct_vs_cum_valid(votes, level, year):
   codes_by_valid = sorted(votes, key=lambda code: votes[code]['valid'])
   cumsums = cumsum_all(votes, codes_by_valid)
@@ -442,7 +449,7 @@ def plot_pct_vs_cum_valid(votes, level, year):
   plot_wrap((cumsums['valid'], cumsum_gov_pct, 'r',
             cumsums['valid'], cumsum_cap_pct, 'b',
             cumsums['valid'], cumsum_null_pct, 'k'),
-            title='Candidate % vs cumulative valid votes, by %s' % level,
+            title='Candidate %% vs cumulative valid votes, by %s' % level,
             xlabel='Cumulative valid votes (by %s)' % level,
             ylabel='Candidate % of votes',
             filename='candidate_pct_vs_cum_valid_by_%s_%d.png' % (level, year))
@@ -457,6 +464,7 @@ plot_pct_vs_cum_valid(centers[0], 'center', 2012)
 plot_pct_vs_cum_valid(parishes[0], 'parish', 2012)
 plot_pct_vs_cum_valid(munis[0], 'muni', 2012)
 plot_pct_vs_cum_valid(states[0], 'state', 2012)
+
 
 ### Participation-related analysis
 
@@ -510,42 +518,64 @@ pairs = filter(lambda (k, v): v['particip'] > 98, tables[1].iteritems())
 # Null vote analysis
 
 
-# Benford analysis
-benford_1st = [30.1, 17.6, 12.5, 9.7, 7.9, 6.7, 5.8, 5.1, 4.6]
+### Benford analysis
 
-def dig_pct(jd, dim, year=1):
-  fst_digits = filter(lambda d: d != 0,  map(lambda c: int(str(jd[c][year][dim])[0]), jd))
-  fst_dig_freq = defaultdict(int)
-  for d in fst_digits:
-    fst_dig_freq[d] += 1
-  print ("for %s in year %d, we have " + repr(fst_dig_freq)) % (dim, year)
-  fst_dig_pct = map(lambda d: 100 * float(d) / len(fst_digits), fst_dig_freq.values())
-  return fst_dig_pct
+# ref: http://www.usfca.edu/fac-staff/huxleys/Benford.html
+benford_1st = [30.1, 17.61, 12.49, 9.69, 7.92, 6.69, 5.8, 5.12, 4.58]
+benford_2nd = [11.97, 11.39, 10.88, 10.43, 10.03, 9.67, 9.34, 9.04, 8.76, 8.50]
 
-digs = range(1, 10)
-cap_fst_digits = filter(lambda d: d != 0,  map(lambda c: int(str(jt[c][1]['cap'])[0]), jt))
-plt.figure()
-plt.plot(digs, dig_pct(jc, 'cap'), 'bo-',
-         digs, dig_pct(jc, 'cap', 0), 'b.-',
-         digs, dig_pct(jc, 'gov'), 'ro-',
-         digs, dig_pct(jc, 'gov', 0), 'r.-',
-         digs, benford_1st, 'go-')
-plt.draw()
-plt.savefig('benford_1st_gov_2013_plot.png')
+def dig_pct(votes, valid_digits, extract_digit):
+  samples = filter(lambda d: d != -1, map(extract_digit, votes))
+  dig_freq = defaultdict(int)
+  for d in samples:
+    dig_freq[d] += 1
+  dig_pct = map(lambda d: 100 * float(dig_freq[d]) / len(samples), valid_digits)
+  return dig_pct
 
-plt.figure()
-plt.hist(cap_fst_digits, bins=9)
-plt.draw()
-plt.savefig('benford_1st_cap_2013.png')
+def fst_dig_pct(votes, dim):
+  return dig_pct(votes, range(1, 10),
+                 lambda c: int(str(votes[c][dim])[0]) if votes[c][dim] != 0 else -1)
 
-# Notes from Choquette:
-# TODO(ipince): vote % for each, vs turnout. also vs. total valid votes.
-# per center, per table, per parish.
+def snd_dig_pct(votes, dim):
+  return dig_pct(votes, range(0, 10),
+                 lambda c: int(str(votes[c][dim]).zfill(2)[1]) if votes[c][dim] > 9 else -1)
 
-# TODO(ipince): find people that voted for cap in tables where he got 0 (or <5) votes. If you can find them (and believe them) => there was fraud.
+def plot_benford_1st(places, level):
+  digs = range(1, 10)
+  plot_wrap((digs, fst_dig_pct(places[1], 'cap'), 'bo-',
+            digs, fst_dig_pct(places[0], 'cap'), 'b.-',
+            digs, fst_dig_pct(places[1], 'gov'), 'ro-',
+            digs, fst_dig_pct(places[0], 'gov'), 'r.-',
+            digs, benford_1st, 'go-'),
+            title='Benford\'s Law for the 1st digit, by %s' % level,
+            xlabel='First digit',
+            ylabel='Percentage of tallies (%)',
+            filename='benford_1st_all_%s.png' % level)
 
-# TODO(ipince): vote % vs. cumulative valid votes.
-# TODO(ipince): do analysis of geographically random centers.
+def plot_benford_2nd(places, level):
+  digs = range(0, 10)
+  plot_wrap((digs, snd_dig_pct(places[1], 'cap'), 'bo-',
+            digs, snd_dig_pct(places[0], 'cap'), 'b.-',
+            digs, snd_dig_pct(places[1], 'gov'), 'ro-',
+            digs, snd_dig_pct(places[0], 'gov'), 'r.-',
+            digs, benford_2nd, 'go-'),
+            title='Benford\'s Law for the 2nd digit, by %s' % level,
+            xlabel='Second digit',
+            ylabel='Percentage of tallies (%)',
+            filename='benford_2nd_all_%s.png' % level)
+
+def plot_all_benford():
+  plot_benford_1st(states, 'state')
+  plot_benford_1st(munis, 'muni')
+  plot_benford_1st(parishes, 'parish')
+  plot_benford_1st(centers, 'center')
+  plot_benford_1st(tables, 'table')
+  plot_benford_2nd(states, 'state')
+  plot_benford_2nd(munis, 'muni')
+  plot_benford_2nd(parishes, 'parish')
+  plot_benford_2nd(centers, 'center')
+  plot_benford_2nd(tables, 'table')
+
 
 # TODO: name/bday collision analysis
 
