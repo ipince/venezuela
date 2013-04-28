@@ -382,35 +382,44 @@ print "Gov got 0 votes in %d tables" % len(filter_by(data[0]['table'], lambda v:
 
 # Graph of candidate % over cumsum(valid-votes)
 
+def cumsum(votes, dim, iter_codes):
+  cumsum = list()
+  for code in iter_codes:
+    if not cumsum:
+      cumsum.append(votes[code][dim])
+    else:
+      cumsum.append(cumsum[-1] + votes[code][dim])
+  return cumsum
+
+# calculate cumulative sums
 codes_by_valid = sorted(jt, key=lambda code: jt[code][1]['valid'])
-cumsum_valid = list()
-cumsum_gov = list()
-cumsum_cap = list()
-cumsum_null = list()
-for code in codes_by_valid:
-  if not cumsum_valid:
-    cumsum_valid.append(jt[code][1]['valid'])
-    cumsum_gov.append(jt[code][1]['gov'])
-    cumsum_cap.append(jt[code][1]['cap'])
-    cumsum_null.append(jt[code][1]['null'])
-    continue
-  cumsum_valid.append(cumsum_valid[-1] + jt[code][1]['valid'])
-  cumsum_gov.append(cumsum_gov[-1] + jt[code][1]['gov'])
-  cumsum_cap.append(cumsum_cap[-1] + jt[code][1]['cap'])
-  cumsum_null.append(cumsum_null[-1] + jt[code][1]['null'])
+cumsum_valid = cumsum(tables[1], 'valid', codes_by_valid)
+cumsum_gov = cumsum(tables[1], 'gov', codes_by_valid)
+cumsum_cap = cumsum(tables[1], 'cap', codes_by_valid)
+cumsum_null = cumsum(tables[1], 'null', codes_by_valid)
 
 cumsum_gov_pct = map(lambda (n, d): rounded_pct(n, d), zip(cumsum_gov, cumsum_valid))
 cumsum_cap_pct = map(lambda (n, d): rounded_pct(n, d), zip(cumsum_cap, cumsum_valid))
 cumsum_null_pct = map(lambda (n, d): rounded_pct(n, d), zip(cumsum_null, cumsum_valid))
 
-plt.figure()
-plt.plot(cumsum_valid, cumsum_gov_pct, 'r',
-         cumsum_valid, cumsum_cap_pct, 'b',
-         cumsum_valid, cumsum_null_pct, 'k')
-plt.title('Candidate % vs cumulative valid votes, by table')
-plt.grid()
-plt.draw()
-plt.savefig('candidate_pct_vs_cum_valid_by_table.png')
+# wraps plt.plot and optionally sets title, axis labels, and saves graph to disk
+def plot_wrap(plotargs, title=None, xlabel=None, ylabel=None, filename=None):
+  plt.figure()
+  plt.plot(*plotargs)
+  if title: plt.title(title)
+  if xlabel: plt.xlabel(xlabel)
+  if ylabel: plt.ylabel(ylabel)
+  plt.grid()
+  plt.draw()
+  if filename: plt.savefig(filename)
+
+plot_wrap((cumsum_valid, cumsum_gov_pct, 'r',
+          cumsum_valid, cumsum_cap_pct, 'b',
+          cumsum_valid, cumsum_null_pct, 'k'),
+          title='Candidate % vs cumulative valid votes, by table',
+          xlabel='Cumulative valid votes (by table)',
+          ylabel='Candidate % of votes',
+          filename='candidate_pct_vs_cum_valid_by_table.png')
 
 ### Participation-related analysis
 
