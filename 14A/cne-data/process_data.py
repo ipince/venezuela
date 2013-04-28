@@ -16,6 +16,8 @@ csv_14a = 'esdata_resultados_elecc_2013-04-14-v1_2.csv'
 indices_14a = {
   'state_code': 0,
   'state_name': 1,
+  'muni_code': 2,
+  'parish_code': 4,
   'center_code_old': 8,
   'center_code_new': 9,
   'center_name': 6,
@@ -36,6 +38,8 @@ csv_7o = 'esdata_resultados_elecc_2012-10-07C.csv'
 indices_7o = {
   'state_code': 0,
   'state_name': 1,
+  'muni_code': 2,
+  'parish_code': 4,
   'center_code_old': 8,
   'center_code_new': 9,
   'center_name': 6,
@@ -73,16 +77,26 @@ def rounded_pct(num, den):
   if den == 0: return 'N/A'
   return round(100 * float(num) / float(den), 2)
 
+def aggregate_votes(votes, code, row, indices, name_dim=None, name_func=None):
+  if code not in votes:
+    votes[code] = defaultdict(int)
+    if name_func:
+      votes[code]['name'] = name_func(row, indices)
+    elif name_dim:
+      votes[code]['name'] = row[indices[name_dim]]
+  add_votes(votes[code], row, indices)
+
 def process_csv(filename, indices):
   csv_file = open(filename, 'rb')
   csv_reader = csv.reader(csv_file)
 
   totals = defaultdict(int)
   states = {}
+  munis = {}
+  parishes = {}
   centers = {}
   tables = {}
 
-  itr = 1
   first_row = True
   num_ignored = 0
   for row in csv_reader:
@@ -102,29 +116,28 @@ def process_csv(filename, indices):
     add_votes(totals, row, indices)
 
     # aggregate by state
-    state_code = str.zfill(row[indices['state_code']], 2)
-    if state_code not in states:
-      states[state_code] = defaultdict(int)
-      states[state_code]['name'] = row[indices['state_name']]
-    add_votes(states[state_code], row, indices)
+    aggregate_votes(states, str.zfill(row[indices['state_code']], 2),
+                    row, indices, 'state_name')
+
+    aggregate_votes(munis, str.zfill(row[indices['muni_code']], 4), row, indices)
+    aggregate_votes(parishes, str.zfill(row[indices['parish_code']], 6), row, indices)
 
     # aggregate by center
     center_code = str.zfill(row[indices['center_code_new']], 9)
-    if center_code not in centers:
-      centers[center_code] = defaultdict(int)
-      centers[center_code]['name'] = row[indices['center_name']]
-    add_votes(centers[center_code], row, indices)
-    itr += 1
+    aggregate_votes(centers, center_code, row, indices, 'center_name')
 
     # aggregate by table
     table_code = center_code + "." + row[indices['table']]
-    if table_code not in tables:
-      tables[table_code] = defaultdict(int)
-      tables[table_code]['name'] = row[indices['center_name']] + "-" + row[indices['table']]
-    add_votes(tables[table_code], row, indices)
+    aggregate_votes(tables, table_code, row, indices,
+                    name_func = lambda r, i: r[i['center_name']] + '-' + r[i['table']])
 
   print "Done aggregating. Ignored %d rows" % num_ignored
-  return { 'country': {'00': totals}, 'state': states, 'center': centers, 'table': tables}
+  return { 'country': {'00': totals},
+           'state': states,
+           'muni': munis,
+           'parish': parishes,
+           'center': centers,
+           'table': tables }
 
 def fill_participation(data, apr14=True):
   for level in data:
@@ -168,6 +181,22 @@ def filter_uncounted(votes):
   for code in topop:
     votes.pop(code, None)
   print "Filtered %d more places with 0 valid votes" % len(topop)
+
+
+# Utility plotting functions
+
+# wraps plt.plot and optionally sets title, axis labels, and saves graph to disk
+def plot_wrap(plotargs, title=None, xlabel=None, ylabel=None, filename=None):
+  plt.ion()
+  plt.figure()
+  plt.plot(*plotargs)
+  if title: plt.title(title)
+  if xlabel: plt.xlabel(xlabel)
+  if ylabel: plt.ylabel(ylabel)
+  plt.grid()
+  plt.draw()
+  if filename: plt.savefig(filename)
+
 
 def find_zero_participation(votes):
   print "Places with 0% participation:"
@@ -274,9 +303,12 @@ print
 odd_7o_table_codes = filter_by(data[0]['table'], lambda v: v['voting_voters'] != v['scrut_votes'])
 print "Tables in 7O where voting voters does not match scrutinized votes: %d" % len(odd_7o_table_codes)
 
-# varibles for easy access
+# variables for easy access
 tables = [data[0]['table'], data[1]['table']]
 centers = [data[0]['center'], data[1]['center']]
+parishes = [data[0]['parish'], data[1]['parish']]
+munis = [data[0]['muni'], data[1]['muni']]
+states = [data[0]['state'], data[1]['state']]
 
 jt = {} # for joined_tables
 good_codes = set(tables[0]).intersection(set(tables[1])).difference(odd_7o_table_codes)
@@ -305,14 +337,11 @@ print "max diff is %d " % max(gov_nominal_diff)
 # TODO(ipince): change to use plt.hist() instead of plt.plot()
 gov_hist = np.histogram(gov_nominal_diff,
                         bins=range(min(gov_nominal_diff), max(gov_nominal_diff)))
-plt.ion()
-plt.plot(gov_hist[1][1:], gov_hist[0])
-plt.title('Nominal pro-Chavez diff by table')
-plt.xlabel('gov_votes_2013 - gov_votes_2012')
-plt.ylabel('frequency')
-plt.grid()
-plt.draw()
-plt.savefig('gov_votes_diff_hist.png')
+plot_wrap((gov_hist[1][1:], gov_hist[0]),
+          title='Nominal pro-Chavez diff by table',
+          xlabel='gov_votes_2013 - gov_votes_2012',
+          ylabel='frequency',
+          filename='gov_votes_diff_hist.png')
 
 plt.ylim(0, 20)
 plt.draw()
@@ -391,35 +420,43 @@ def cumsum(votes, dim, iter_codes):
       cumsum.append(cumsum[-1] + votes[code][dim])
   return cumsum
 
+def cumsum_all(votes, iter_codes):
+  cumsum_valid = cumsum(votes, 'valid', iter_codes)
+  cumsum_gov = cumsum(votes, 'gov', iter_codes)
+  cumsum_cap = cumsum(votes, 'cap', iter_codes)
+  cumsum_null = cumsum(votes, 'null', iter_codes)
+  return { 'valid': cumsum_valid, 'gov': cumsum_gov,
+           'cap': cumsum_cap, 'null': cumsum_null }
+
 # calculate cumulative sums
-codes_by_valid = sorted(jt, key=lambda code: jt[code][1]['valid'])
-cumsum_valid = cumsum(tables[1], 'valid', codes_by_valid)
-cumsum_gov = cumsum(tables[1], 'gov', codes_by_valid)
-cumsum_cap = cumsum(tables[1], 'cap', codes_by_valid)
-cumsum_null = cumsum(tables[1], 'null', codes_by_valid)
 
-cumsum_gov_pct = map(lambda (n, d): rounded_pct(n, d), zip(cumsum_gov, cumsum_valid))
-cumsum_cap_pct = map(lambda (n, d): rounded_pct(n, d), zip(cumsum_cap, cumsum_valid))
-cumsum_null_pct = map(lambda (n, d): rounded_pct(n, d), zip(cumsum_null, cumsum_valid))
+def plot_pct_vs_cum_valid(votes, level, year):
+  codes_by_valid = sorted(votes, key=lambda code: votes[code]['valid'])
+  cumsums = cumsum_all(votes, codes_by_valid)
 
-# wraps plt.plot and optionally sets title, axis labels, and saves graph to disk
-def plot_wrap(plotargs, title=None, xlabel=None, ylabel=None, filename=None):
-  plt.figure()
-  plt.plot(*plotargs)
-  if title: plt.title(title)
-  if xlabel: plt.xlabel(xlabel)
-  if ylabel: plt.ylabel(ylabel)
-  plt.grid()
-  plt.draw()
-  if filename: plt.savefig(filename)
+  tuple_rounded_pct = lambda (n, d): rounded_pct(n, d)
+  cumsum_gov_pct = map(tuple_rounded_pct, zip(cumsums['gov'], cumsums['valid']))
+  cumsum_cap_pct = map(tuple_rounded_pct, zip(cumsums['cap'], cumsums['valid']))
+  cumsum_null_pct = map(tuple_rounded_pct, zip(cumsums['null'], cumsums['valid']))
 
-plot_wrap((cumsum_valid, cumsum_gov_pct, 'r',
-          cumsum_valid, cumsum_cap_pct, 'b',
-          cumsum_valid, cumsum_null_pct, 'k'),
-          title='Candidate % vs cumulative valid votes, by table',
-          xlabel='Cumulative valid votes (by table)',
-          ylabel='Candidate % of votes',
-          filename='candidate_pct_vs_cum_valid_by_table.png')
+  plot_wrap((cumsums['valid'], cumsum_gov_pct, 'r',
+            cumsums['valid'], cumsum_cap_pct, 'b',
+            cumsums['valid'], cumsum_null_pct, 'k'),
+            title='Candidate % vs cumulative valid votes, by %s' % level,
+            xlabel='Cumulative valid votes (by %s)' % level,
+            ylabel='Candidate % of votes',
+            filename='candidate_pct_vs_cum_valid_by_%s_%d.png' % (level, year))
+
+plot_pct_vs_cum_valid(tables[1], 'table', 2013)
+plot_pct_vs_cum_valid(centers[1], 'center', 2013)
+plot_pct_vs_cum_valid(parishes[1], 'parish', 2013)
+plot_pct_vs_cum_valid(munis[1], 'muni', 2013)
+plot_pct_vs_cum_valid(states[1], 'state', 2013)
+plot_pct_vs_cum_valid(tables[0], 'table', 2012)
+plot_pct_vs_cum_valid(centers[0], 'center', 2012)
+plot_pct_vs_cum_valid(parishes[0], 'parish', 2012)
+plot_pct_vs_cum_valid(munis[0], 'muni', 2012)
+plot_pct_vs_cum_valid(states[0], 'state', 2012)
 
 ### Participation-related analysis
 
