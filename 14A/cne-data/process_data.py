@@ -29,7 +29,7 @@ indices_14a = {
   'abstention': 20,
   
   'gov': 11,
-  'capriles': 12,
+  'cap': 12,
 }
 
 csv_7o = 'esdata_resultados_elecc_2012-10-07C.csv'
@@ -49,7 +49,7 @@ indices_7o = {
   'abstention': 20,
   
   'gov': 11,
-  'capriles': 12,
+  'cap': 12,
 }
 
 def add_votes(totals, row, indices):
@@ -63,7 +63,7 @@ def add_votes(totals, row, indices):
   totals['valid'] += int(row[indices['valid_votes']])
   totals['null'] += int(row[indices['null_votes']])
   totals['gov'] += int(row[indices['gov']])
-  totals['capriles'] += int(row[indices['capriles']])
+  totals['cap'] += int(row[indices['cap']])
   try:
     if 'voters' in indices: totals['voters'] += int(row[indices['voters']])
   except ValueError:
@@ -143,7 +143,7 @@ def fill_pcts(data):
     for code in data[level]:
       data[level][code]['gov_pct'] = rounded_pct(data[level][code]['gov'],
                                                  data[level][code]['valid'])
-      data[level][code]['cap_pct'] = rounded_pct(data[level][code]['capriles'],
+      data[level][code]['cap_pct'] = rounded_pct(data[level][code]['cap'],
                                                  data[level][code]['valid'])
 
 # Copies 'voters' from all values in source to dest.
@@ -244,7 +244,7 @@ def short(votes):
   return '{ voters= ' + str(votes['voters']) + ',\tscrut_votes= ' + str(votes['scrut_votes']).zfill(2) + \
            ',\tvalid= ' + str(votes['valid']) + '\t gov= ' + str(votes['gov']) + \
            ' (' + str(votes['gov_pct']) + ')' + \
-           ',\tcap= ' + str(votes['capriles']).zfill(2) + ',\tparticip= ' + str(votes['particip']) + ' }'
+           ',\tcap= ' + str(votes['cap']).zfill(2) + ',\tparticip= ' + str(votes['particip']) + ' }'
 
 # Read in and clean data
 data = [process_csv(csv_7o, indices_7o), process_csv(csv_14a, indices_14a)]
@@ -278,19 +278,19 @@ print "Tables in 7O where voting voters does not match scrutinized votes: %d" % 
 tables = [data[0]['table'], data[1]['table']]
 centers = [data[0]['center'], data[1]['center']]
 
-joined_tables = {}
+jt = {} # for joined_tables
 good_codes = set(tables[0]).intersection(set(tables[1])).difference(odd_7o_table_codes)
 for code in good_codes:
-  joined_tables[code] = [tables[0][code], tables[1][code]]
+  jt[code] = [tables[0][code], tables[1][code]]
 
 good_codes = set(centers[0]).intersection(set(centers[1]))
-jc = {}
+jc = {} # for joined_centers
 for code in good_codes:
   jc[code] = [data[0]['center'][code], data[1]['center'][code]]
 
 print
-maduro_dom_tables = filter_by(data[1]['table'], lambda v: v['capriles'] == 0)
-chavez_dom_tables = filter_by(data[0]['table'], lambda v: v['capriles'] == 0)
+maduro_dom_tables = filter_by(data[1]['table'], lambda v: v['cap'] == 0)
+chavez_dom_tables = filter_by(data[0]['table'], lambda v: v['cap'] == 0)
 
 maduro_dom_chavez_not = maduro_dom_tables.difference(chavez_dom_tables)
 print "Maduro dominated in %d tables that Chavez did not" % len(maduro_dom_chavez_not)
@@ -298,8 +298,8 @@ print "Maduro dominated in %d tables that Chavez did not" % len(maduro_dom_chave
 #  print data[0]['table'][code]
 
 # graph gov diff
-gov_nominal_diff = map(lambda vs: vs[1]['gov'] - vs[0]['gov'], joined_tables.values())
-gov_pct_diff = map(lambda vs: vs[1]['gov_pct'] - vs[0]['gov_pct'], joined_tables.values())
+gov_nominal_diff = map(lambda vs: vs[1]['gov'] - vs[0]['gov'], jt.values())
+gov_pct_diff = map(lambda vs: vs[1]['gov_pct'] - vs[0]['gov_pct'], jt.values())
 
 print "max diff is %d " % max(gov_nominal_diff)
 # TODO(ipince): change to use plt.hist() instead of plt.plot()
@@ -353,8 +353,8 @@ plt.savefig('gov_pct_diff_cumsum.png')
 # TODO(ipince): do by center
 # TODO(ipince): do with added weird centers
 # TODO(ipince): do just 2013 election; no diffs
-jt = joined_tables
-codes_by_size = sorted(joined_tables, key=lambda code: joined_tables[code][1]['voters'])
+# joined! codes by size
+codes_by_size = sorted(jt, key=lambda code: jt[code][1]['voters'])
 plt.figure()
 plt.scatter([jt[c][1]['voters'] for c in codes_by_size],
          [jt[c][1]['gov_pct'] - jt[c][0]['gov_pct'] for c in codes_by_size])
@@ -391,12 +391,12 @@ for code in codes_by_valid:
   if not cumsum_valid:
     cumsum_valid.append(jt[code][1]['valid'])
     cumsum_gov.append(jt[code][1]['gov'])
-    cumsum_cap.append(jt[code][1]['capriles'])
+    cumsum_cap.append(jt[code][1]['cap'])
     cumsum_null.append(jt[code][1]['null'])
     continue
   cumsum_valid.append(cumsum_valid[-1] + jt[code][1]['valid'])
   cumsum_gov.append(cumsum_gov[-1] + jt[code][1]['gov'])
-  cumsum_cap.append(cumsum_cap[-1] + jt[code][1]['capriles'])
+  cumsum_cap.append(cumsum_cap[-1] + jt[code][1]['cap'])
   cumsum_null.append(cumsum_null[-1] + jt[code][1]['null'])
 
 cumsum_gov_pct = map(lambda (n, d): rounded_pct(n, d), zip(cumsum_gov, cumsum_valid))
@@ -444,15 +444,15 @@ print "Tables in which there is more than %.2f pct participation difference:" % 
 codes = compare_by(tables, lambda v1, v2: v2['particip'] - v1['particip'] > delta, output=False, exclude=odd_7o_table_codes)
 
 print "There are %d such tables" % len(codes)
-#s = sorted([joined_tables[c] for c in codes], key=lambda vs: vs[1]['gov_pct'], reverse=True)
-s = sorted([joined_tables[c] for c in codes], key=lambda vs: vs[1]['particip'] - vs[0]['particip'] , reverse=True)
+#s = sorted([jt[c] for c in codes], key=lambda vs: vs[1]['gov_pct'], reverse=True)
+s = sorted([jt[c] for c in codes], key=lambda vs: vs[1]['particip'] - vs[0]['particip'] , reverse=True)
 #for elm in s:
 #  print short(elm[0])
 #  print short(elm[1])
 
 print "gov rules on %d" % len(filter(lambda v: v['gov_pct'] >= 50, [tables[1][c] for c in codes]))
 print "delta gov in those is %d" % (sum([tables[1][c]['gov'] for c in codes]) - sum([tables[0][c]['gov'] for c in codes]))
-print "delta cap in those is %d" % (sum([tables[1][c]['capriles'] for c in codes]) - sum([tables[0][c]['capriles'] for c in codes]))
+print "delta cap in those is %d" % (sum([tables[1][c]['cap'] for c in codes]) - sum([tables[0][c]['cap'] for c in codes]))
 
 pairs = filter(lambda (k, v): v['particip'] > 98, tables[1].iteritems())
 
@@ -477,10 +477,10 @@ def dig_pct(jd, dim, year=1):
   return fst_dig_pct
 
 digs = range(1, 10)
-cap_fst_digits = filter(lambda d: d != 0,  map(lambda c: int(str(jt[c][1]['capriles'])[0]), jt))
+cap_fst_digits = filter(lambda d: d != 0,  map(lambda c: int(str(jt[c][1]['cap'])[0]), jt))
 plt.figure()
-plt.plot(digs, dig_pct(jc, 'capriles'), 'bo-',
-         digs, dig_pct(jc, 'capriles', 0), 'b.-',
+plt.plot(digs, dig_pct(jc, 'cap'), 'bo-',
+         digs, dig_pct(jc, 'cap', 0), 'b.-',
          digs, dig_pct(jc, 'gov'), 'ro-',
          digs, dig_pct(jc, 'gov', 0), 'r.-',
          digs, benford_1st, 'go-')
