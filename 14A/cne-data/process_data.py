@@ -261,24 +261,32 @@ compare_places(data[0]['center'], data[1]['center'])
 print "Comparing tables"
 compare_places(data[0]['table'], data[1]['table'])
 
-# varibles for easy access
-tables = [data[0]['table'], data[1]['table']]
-
 print
 print "Filtering 7O"
 filter_uncounted(data[0]['table'])
+filter_uncounted(data[0]['center'])
 print "Filtering 14A"
 filter_uncounted(data[1]['table'])
+filter_uncounted(data[1]['center'])
 
 # CNE data weirdness in 7O:
 print
 odd_7o_table_codes = filter_by(data[0]['table'], lambda v: v['voting_voters'] != v['scrut_votes'])
 print "Tables in 7O where voting voters does not match scrutinized votes: %d" % len(odd_7o_table_codes)
 
+# varibles for easy access
+tables = [data[0]['table'], data[1]['table']]
+centers = [data[0]['center'], data[1]['center']]
+
 joined_tables = {}
 good_codes = set(tables[0]).intersection(set(tables[1])).difference(odd_7o_table_codes)
 for code in good_codes:
   joined_tables[code] = [tables[0][code], tables[1][code]]
+
+good_codes = set(centers[0]).intersection(set(centers[1]))
+jc = {}
+for code in good_codes:
+  jc[code] = [data[0]['center'][code], data[1]['center'][code]]
 
 print
 maduro_dom_tables = filter_by(data[1]['table'], lambda v: v['capriles'] == 0)
@@ -344,20 +352,65 @@ plt.savefig('gov_pct_diff_cumsum.png')
 # TODO(ipince): do by valid too
 # TODO(ipince): do by center
 # TODO(ipince): do with added weird centers
+# TODO(ipince): do just 2013 election; no diffs
 jt = joined_tables
 codes_by_size = sorted(joined_tables, key=lambda code: joined_tables[code][1]['voters'])
 plt.figure()
 plt.scatter([jt[c][1]['voters'] for c in codes_by_size],
          [jt[c][1]['gov_pct'] - jt[c][0]['gov_pct'] for c in codes_by_size])
 plt.title('Pro-Chavez % diff by table')
-plt.xlabel('table size')
+plt.xlabel('table size (registered voters)')
 plt.ylabel('gov_pct_2013 - gov_pct_2012')
 plt.grid()
 plt.draw()
 plt.savefig('gov_pct_diff_by_table_size.png')
 
+codes_by_size = sorted(jc, key=lambda code: jc[code][1]['voters'])
+plt.figure()
+plt.scatter([jc[c][1]['voters'] for c in codes_by_size],
+            [jc[c][1]['gov_pct'] - jc[c][0]['gov_pct'] for c in codes_by_size])
+plt.title('Pro-Chavez % diff by center')
+plt.xlabel('center size (registered voters)')
+plt.ylabel('gov_pct_2013 - gov_pct_2012')
+plt.grid()
+plt.draw()
+plt.savefig('gov_pct_diff_by_center_size.png')
 
 print "Gov got 0 votes in %d tables" % len(filter_by(data[0]['table'], lambda v: v['gov'] == 0))
+
+### Suggested analysis from Choquette.
+
+# Graph of candidate % over cumsum(valid-votes)
+
+codes_by_valid = sorted(jt, key=lambda code: jt[code][1]['valid'])
+cumsum_valid = list()
+cumsum_gov = list()
+cumsum_cap = list()
+cumsum_null = list()
+for code in codes_by_valid:
+  if not cumsum_valid:
+    cumsum_valid.append(jt[code][1]['valid'])
+    cumsum_gov.append(jt[code][1]['gov'])
+    cumsum_cap.append(jt[code][1]['capriles'])
+    cumsum_null.append(jt[code][1]['null'])
+    continue
+  cumsum_valid.append(cumsum_valid[-1] + jt[code][1]['valid'])
+  cumsum_gov.append(cumsum_gov[-1] + jt[code][1]['gov'])
+  cumsum_cap.append(cumsum_cap[-1] + jt[code][1]['capriles'])
+  cumsum_null.append(cumsum_null[-1] + jt[code][1]['null'])
+
+cumsum_gov_pct = map(lambda (n, d): rounded_pct(n, d), zip(cumsum_gov, cumsum_valid))
+cumsum_cap_pct = map(lambda (n, d): rounded_pct(n, d), zip(cumsum_cap, cumsum_valid))
+cumsum_null_pct = map(lambda (n, d): rounded_pct(n, d), zip(cumsum_null, cumsum_valid))
+
+plt.figure()
+plt.plot(cumsum_valid, cumsum_gov_pct, 'r',
+         cumsum_valid, cumsum_cap_pct, 'b',
+         cumsum_valid, cumsum_null_pct, 'k')
+plt.title('Candidate % vs cumulative valid votes, by table')
+plt.grid()
+plt.draw()
+plt.savefig('candidate_pct_vs_cum_valid_by_table.png')
 
 ### Participation-related analysis
 
@@ -412,7 +465,41 @@ pairs = filter(lambda (k, v): v['particip'] > 98, tables[1].iteritems())
 
 
 # Benford analysis
+benford_1st = [30.1, 17.6, 12.5, 9.7, 7.9, 6.7, 5.8, 5.1, 4.6]
 
+def dig_pct(jd, dim, year=1):
+  fst_digits = filter(lambda d: d != 0,  map(lambda c: int(str(jd[c][year][dim])[0]), jd))
+  fst_dig_freq = defaultdict(int)
+  for d in fst_digits:
+    fst_dig_freq[d] += 1
+  print ("for %s in year %d, we have " + repr(fst_dig_freq)) % (dim, year)
+  fst_dig_pct = map(lambda d: 100 * float(d) / len(fst_digits), fst_dig_freq.values())
+  return fst_dig_pct
+
+digs = range(1, 10)
+cap_fst_digits = filter(lambda d: d != 0,  map(lambda c: int(str(jt[c][1]['capriles'])[0]), jt))
+plt.figure()
+plt.plot(digs, dig_pct(jc, 'capriles'), 'bo-',
+         digs, dig_pct(jc, 'capriles', 0), 'b.-',
+         digs, dig_pct(jc, 'gov'), 'ro-',
+         digs, dig_pct(jc, 'gov', 0), 'r.-',
+         digs, benford_1st, 'go-')
+plt.draw()
+plt.savefig('benford_1st_gov_2013_plot.png')
+
+plt.figure()
+plt.hist(cap_fst_digits, bins=9)
+plt.draw()
+plt.savefig('benford_1st_cap_2013.png')
+
+# Notes from Choquette:
+# TODO(ipince): vote % for each, vs turnout. also vs. total valid votes.
+# per center, per table, per parish.
+
+# TODO(ipince): find people that voted for cap in tables where he got 0 (or <5) votes. If you can find them (and believe them) => there was fraud.
+
+# TODO(ipince): vote % vs. cumulative valid votes.
+# TODO(ipince): do analysis of geographically random centers.
 
 # TODO: name/bday collision analysis
 
