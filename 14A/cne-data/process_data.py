@@ -60,7 +60,8 @@ indices_7o = {
   'cap': 12,
 }
 
-# Fills in voting data from a given row into a dict of totals
+# Merges in voting data from a single CSV row into a dict holding
+# running totals for various counts.
 def add_votes(totals, row, indices):
   if 'scrut_voters' in indices:
     totals['scrut_voters'] += int(row[indices['scrut_voters']])
@@ -79,6 +80,9 @@ def add_votes(totals, row, indices):
     logger.warning('Invalid number of voters in row: ' + repr(row))
 
 def aggregate_votes(votes, code, row, indices, name_dim=None, name_func=None):
+	assert isinstance(votes), dict
+	# Id for the level we're aggregating over
+	assert isinstance(code), str
   if code not in votes:
     votes[code] = defaultdict(int)
     if name_func:
@@ -88,6 +92,13 @@ def aggregate_votes(votes, code, row, indices, name_dim=None, name_func=None):
   add_votes(votes[code], row, indices)
 
 def process_csv(filename, indices):
+	"""Returns a dict of dicts:  level -> { id -> count }."""
+  return { 'country': {'00': totals},
+           'state': states,
+           'muni': munis,
+           'parish': parishes,
+           'center': centers,
+           'table': tables }
   csv_file = open(filename, 'rb')
   csv_reader = csv.reader(csv_file)
 
@@ -113,7 +124,7 @@ def process_csv(filename, indices):
       num_ignored += 1
       continue
 
-    # build non-trivial codes for this row at different levels
+    # Create center and table ids for the data in this row
     center_code = str.zfill(row[indices['center_code_new']], 9)
     table_code = center_code + "." + row[indices['table']]
 
