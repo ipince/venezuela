@@ -12,6 +12,10 @@ logger = logging.getLogger('log')
 logger.setLevel(logging.ERROR)
 logger.addHandler(logging.StreamHandler())
 
+###
+### CSV data processing
+###
+
 csv_14a = 'esdata_resultados_elecc_2013-04-14-v1_2.csv'
 indices_14a = {
   'state_code': 0,
@@ -56,6 +60,7 @@ indices_7o = {
   'cap': 12,
 }
 
+# Fills in voting data from a given row into a dict of totals
 def add_votes(totals, row, indices):
   if 'scrut_voters' in indices:
     totals['scrut_voters'] += int(row[indices['scrut_voters']])
@@ -72,10 +77,6 @@ def add_votes(totals, row, indices):
     if 'voters' in indices: totals['voters'] += int(row[indices['voters']])
   except ValueError:
     logger.warning('Invalid number of voters in row: ' + repr(row))
-
-def rounded_pct(num, den):
-  if den == 0: return 'N/A'
-  return round(100 * float(num) / float(den), 2)
 
 def aggregate_votes(votes, code, row, indices, name_dim=None, name_func=None):
   if code not in votes:
@@ -112,22 +113,17 @@ def process_csv(filename, indices):
       num_ignored += 1
       continue
 
-    # add to grand totals
-    add_votes(totals, row, indices)
+    # build non-trivial codes for this row at different levels
+    center_code = str.zfill(row[indices['center_code_new']], 9)
+    table_code = center_code + "." + row[indices['table']]
 
-    # aggregate by state
+    # aggregate votes by top-level (country), state, muni, parish, center, table
+    add_votes(totals, row, indices)
     aggregate_votes(states, str.zfill(row[indices['state_code']], 2),
                     row, indices, 'state_name')
-
     aggregate_votes(munis, str.zfill(row[indices['muni_code']], 4), row, indices)
     aggregate_votes(parishes, str.zfill(row[indices['parish_code']], 6), row, indices)
-
-    # aggregate by center
-    center_code = str.zfill(row[indices['center_code_new']], 9)
     aggregate_votes(centers, center_code, row, indices, 'center_name')
-
-    # aggregate by table
-    table_code = center_code + "." + row[indices['table']]
     aggregate_votes(tables, table_code, row, indices,
                     name_func = lambda r, i: r[i['center_name']] + '-' + r[i['table']])
 
@@ -159,6 +155,8 @@ def fill_pcts(data):
       data[level][code]['cap_pct'] = rounded_pct(data[level][code]['cap'],
                                                  data[level][code]['valid'])
 
+### Data filtering
+
 # Copies 'voters' from all values in source to dest.
 def fill_voters(source, dest):
   for place in source:
@@ -182,10 +180,22 @@ def filter_uncounted(votes):
     votes.pop(code, None)
   print "Filtered %d more places with 0 valid votes" % len(topop)
 
+### Utility math-related functions
 
-# Utility plotting functions
+def rounded_pct(num, den):
+  if den == 0: return 'N/A'
+  return round(100 * float(num) / float(den), 2)
 
-# wraps plt.plot and optionally sets title, axis labels, and saves graph to disk
+def mean(a):
+  return float(sum(a)) / len(a)
+
+def stdev(a):
+  m = mean(a)
+  return math.sqrt(sum((x-m) ** 2 for x in a) / len(a))
+
+### Utility plotting functions
+
+# Wraps plt.plot and optionally sets title, axis labels, and saves graph to disk
 def plot_wrap(plotargs, title=None, xlabel=None, ylabel=None, filename=None):
   plt.ion()
   plt.figure()
@@ -197,6 +207,7 @@ def plot_wrap(plotargs, title=None, xlabel=None, ylabel=None, filename=None):
   plt.draw()
   if filename: plt.savefig(filename)
 
+### TODO(ipince): cleanup the functions below.
 
 def find_zero_participation(votes):
   print "Places with 0% participation:"
@@ -274,6 +285,8 @@ def short(votes):
            ',\tvalid= ' + str(votes['valid']) + '\t gov= ' + str(votes['gov']) + \
            ' (' + str(votes['gov_pct']) + ')' + \
            ',\tcap= ' + str(votes['cap']).zfill(2) + ',\tparticip= ' + str(votes['particip']) + ' }'
+
+
 
 # Read in and clean data
 data = [process_csv(csv_7o, indices_7o), process_csv(csv_14a, indices_14a)]
@@ -454,26 +467,20 @@ def plot_pct_vs_cum_valid(votes, level, year):
             ylabel='Candidate % of votes',
             filename='candidate_pct_vs_cum_valid_by_%s_%d.png' % (level, year))
 
-plot_pct_vs_cum_valid(tables[1], 'table', 2013)
-plot_pct_vs_cum_valid(centers[1], 'center', 2013)
-plot_pct_vs_cum_valid(parishes[1], 'parish', 2013)
-plot_pct_vs_cum_valid(munis[1], 'muni', 2013)
-plot_pct_vs_cum_valid(states[1], 'state', 2013)
-plot_pct_vs_cum_valid(tables[0], 'table', 2012)
-plot_pct_vs_cum_valid(centers[0], 'center', 2012)
-plot_pct_vs_cum_valid(parishes[0], 'parish', 2012)
-plot_pct_vs_cum_valid(munis[0], 'muni', 2012)
-plot_pct_vs_cum_valid(states[0], 'state', 2012)
+def plot_all_pct_vs_cum_valid():
+  plot_pct_vs_cum_valid(tables[1], 'table', 2013)
+  plot_pct_vs_cum_valid(centers[1], 'center', 2013)
+  plot_pct_vs_cum_valid(parishes[1], 'parish', 2013)
+  plot_pct_vs_cum_valid(munis[1], 'muni', 2013)
+  plot_pct_vs_cum_valid(states[1], 'state', 2013)
+  plot_pct_vs_cum_valid(tables[0], 'table', 2012)
+  plot_pct_vs_cum_valid(centers[0], 'center', 2012)
+  plot_pct_vs_cum_valid(parishes[0], 'parish', 2012)
+  plot_pct_vs_cum_valid(munis[0], 'muni', 2012)
+  plot_pct_vs_cum_valid(states[0], 'state', 2012)
 
 
 ### Participation-related analysis
-
-def mean(a):
-  return float(sum(a)) / len(a)
-
-def stdev(a):
-  m = mean(a)
-  return math.sqrt(sum((x-m) ** 2 for x in a) / len(a))
 
 print "Histogram of participation diff"
 diff = list()
