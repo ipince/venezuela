@@ -93,12 +93,6 @@ def aggregate_votes(votes, code, row, indices, name_dim=None, name_func=None):
 
 def process_csv(filename, indices):
   """Returns a dict of dicts:  level -> { id -> count }."""
-  return { 'country': {'00': totals},
-           'state': states,
-           'muni': munis,
-           'parish': parishes,
-           'center': centers,
-           'table': tables }
   csv_file = open(filename, 'rb')
   csv_reader = csv.reader(csv_file)
 
