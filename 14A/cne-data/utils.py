@@ -58,3 +58,35 @@ def plot_wrap(plotargs, title=None, xlabel=None, ylabel=None, filename=None):
   plt.draw()
   if filename: plt.savefig(filename)
 
+def hist_wrap(histargs, title=None, xlabel=None, ylabel=None, filename=None):
+  plt.ion()
+  plt.figure()
+  plt.hist(*histargs)
+  if title: plt.title(title)
+  if xlabel: plt.xlabel(xlabel)
+  if ylabel: plt.ylabel(ylabel)
+  plt.grid()
+  plt.draw()
+  if filename: plt.savefig(filename)
+
+def scatter_wrap(scatargs, title=None, xlabel=None, ylabel=None, filename=None):
+  plt.ion()
+  plt.figure()
+  plt.scatter(*scatargs)
+  if title: plt.title(title)
+  if xlabel: plt.xlabel(xlabel)
+  if ylabel: plt.ylabel(ylabel)
+  plt.grid()
+  plt.draw()
+  if filename: plt.savefig(filename)
+
+
+### Printing
+
+def short(votes):
+  return '{ voters= ' + str(votes['voters']) + ',\tscrut_votes= ' + str(votes['scrut_votes']).zfill(2) + \
+           ',\tvalid= ' + str(votes['valid']) + '\t gov= ' + str(votes['gov']) + \
+           ' (' + str(votes['gov_pct']) + ')' + \
+           ',\tcap= ' + str(votes['cap']).zfill(2) + ',\tparticip= ' + str(votes['particip']) + ' }'
+
+
