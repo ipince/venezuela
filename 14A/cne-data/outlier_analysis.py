@@ -67,6 +67,7 @@ def plot_all_diff_hists():
   plot_diff_hists(jc, 'gov_pct', 'center')
   plot_diff_hists(jc, 'cap_pct', 'center')
 
+plot_all_diff_hists()
 
 # Scatter plots of diffs by level (table, center) size (voters, valid)
 # TODO(ipince): do with added weird centers
@@ -88,10 +89,11 @@ def plot_diff_scatter(joined, dim, size_dim, level):
 def plot_all_diff_scatters():
   plot_diff_scatter(jt, 'gov_pct', 'voters', 'table')
   plot_diff_scatter(jc, 'gov_pct', 'voters', 'center')
-  plot_diff_scatter(jc, 'gov_pct', 'voters', 'parish')
+  plot_diff_scatter(jp, 'gov_pct', 'voters', 'parish')
 
   plot_diff_scatter(jt, 'cap_pct', 'voters', 'table')
   plot_diff_scatter(jc, 'cap_pct', 'voters', 'center')
+  plot_diff_scatter(jp, 'cap_pct', 'voters', 'parish')
 
-
+plot_all_diff_scatters()
 
