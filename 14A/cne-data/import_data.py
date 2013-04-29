@@ -242,6 +242,11 @@ for code in good_codes:
 good_codes = set(centers[0]).intersection(set(centers[1]))
 jc = {} # for joined_centers
 for code in good_codes:
-  jc[code] = [data[0]['center'][code], data[1]['center'][code]]
+  jc[code] = [centers[0][code], centers[1][code]]
+
+good_codes = set(parishes[0]).intersection(set(parishes[1]))
+jp = {} # for joined_parishes
+for code in good_codes:
+  jp[code] = [parishes[0][code], parishes[1][code]]
 
 
