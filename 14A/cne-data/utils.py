@@ -43,6 +43,7 @@ def compare_by(votes_arr, pred, exclude=set(), output=False):
       matching.add(code)
   return matching
 
+
 ### Utility plotting functions
 
 # Wraps plt.plot and optionally sets title, axis labels, and saves graph to disk
