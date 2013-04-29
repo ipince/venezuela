@@ -80,9 +80,9 @@ def add_votes(totals, row, indices):
     logger.warning('Invalid number of voters in row: ' + repr(row))
 
 def aggregate_votes(votes, code, row, indices, name_dim=None, name_func=None):
-	assert isinstance(votes), dict
-	# Id for the level we're aggregating over
-	assert isinstance(code), str
+  assert isinstance(votes, dict)
+  # Id for the level we're aggregating over
+  assert isinstance(code, str)
   if code not in votes:
     votes[code] = defaultdict(int)
     if name_func:
@@ -92,7 +92,7 @@ def aggregate_votes(votes, code, row, indices, name_dim=None, name_func=None):
   add_votes(votes[code], row, indices)
 
 def process_csv(filename, indices):
-	"""Returns a dict of dicts:  level -> { id -> count }."""
+  """Returns a dict of dicts:  level -> { id -> count }."""
   return { 'country': {'00': totals},
            'state': states,
            'muni': munis,
