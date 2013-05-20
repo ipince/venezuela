@@ -7,7 +7,7 @@ The data was obtained through the following steps:
 
 1. Finding documents listing rank promotions ("ascensos") on the Militia's [site][milicias-home], such as [these][promo-example]. These documents (pdfs) are dated and are sometimes region-specific; the dates and region of the data is included in the final csv. All the documents found and processed are listed later on this README.
 2. Transcribing the names and cedulas in the promotion documents (either by hand or through Mechanical Turk).
-3. Verifying that the transcribed names and cedulas match the CNE registry, and filtering out those names that do not match. The `milicias-merged-raw.csv` file contains the raw transcribed data. The final `milicias-merged-cleaned.csv` file contains the same data with the non-matching rows excluded. The `filter_names.py` script generated the `cleaned` csv from the `raw` one. In order to work, the script requires access to a local MySQL database with name and cedulas.
+3. Verifying that the transcribed names and cedulas match the CNE registry, and filtering out those names that do not match. The `milicias-merged-raw.csv` file contains the raw transcribed data. The final `milicias-merged-cleaned.csv` file contains the same data with the non-matching rows excluded. The `filter_names.py` script generated the `cleaned` csv from the `raw` one. In order to work, the script requires access to a local MySQL database with name and cedulas. The name matching is fuzzy, using edit distances and trying permutations of the name to determine whether there is a match.
 
 
 ## List of documents found/processed
