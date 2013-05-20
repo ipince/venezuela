@@ -12,7 +12,7 @@ The data was obtained through the following steps:
 
 ## List of documents found/processed
 
-I have copies of all these documents, in case the government decides to pull them off the Milicia's website. The dates are the dates printed on the documents themselves.
+I have copies of all these documents, in case the government decides to pull them off the Milicia's website. I can make them available upon request. The dates are the dates printed on the documents themselves.
 
 Processed:
 * September 7, 2011 (1 doc)
