@@ -1,4 +1,4 @@
-# Milicia Data
+# Militia Data
 
 
 This directory contains a csv file (`milicias-merged-cleaned.csv`) listing members of the [Bolivarian Militias][milicias-home], as of May 2013. The 'Fecha' column contains the date of the source document that the data was obtained from.
