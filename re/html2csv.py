@@ -1,16 +1,59 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+import argparse
 import csv
 import glob
 import HTMLParser
+import os
 import sys
 
 from lxml import etree
 
-print "args are " + repr(sys.argv)
 
-directory = sys.argv[1]
+arg_parser = argparse.ArgumentParser(
+                 description='Dumps information from scraped CNE html files into csv format')
+arg_parser.add_argument('root_dir', help='The directory the html files are stored in')
+arg_parser.add_argument('--millions', '-m', nargs='?', type=str, required=True,
+                        help='Millionths regexp')
+arg_parser.add_argument('--thousands', '-t', nargs='?', type=str, default='*',
+                        help='Thousandths regexp')
+arg_parser.add_argument('--cedula', '-c', nargs='?', type=str, default='*',
+                        help='Cedula filter to use on the filename')
+arg_parser.add_argument('--prefix', '-p', nargs='?', type=int,
+                        help='A prefix to restrict the dump on')
+args = arg_parser.parse_args()
+
+print args
+directory = args.root_dir
+
+#prefix = args.prefix
+#mils, thous, ones = '*', '*', '*'
+
+#if prefix and 0 <= prefix <= 30000000:
+#  if 0 <= prefix < 100:
+#    mils = str(prefix)
+#  elif 100 <= prefix < 100000:
+#    mils = str(prefix)[0:2]
+#    thous = str(prefix)[2:]
+#  elif 100000 <= prefix:
+#    mils = str(prefix)[0:2]
+#    thous = str(prefix)[2:]
+#    ones = prefix - ((prefix / 1000000) * 100000)
+#else:
+#  print "No prefix specified, or not a number, or too long: '%s'. Exiting" % prefix
+#  exit()
+
+#print "mils: %s, thous: %s, ones: %s, prefix: %d" % (mils,thous,ones,prefix)
+
+# If there is no thousands filter, go over directories manually to avoid over-sorting
+# Going over thousands dirs first speeds up things mildly.
+html_files = list()
+thousands_dirs = glob.glob(os.path.join(directory, args.millions, args.thousands))
+for d in sorted(thousands_dirs):
+  html_files.extend(sorted(glob.glob(os.path.join(d, 'web_registro*cedula=' + args.cedula))))
+print len(html_files)
+exit()
 
 
 def read(filename):
@@ -19,6 +62,7 @@ def read(filename):
   return f.read()
   #return extract_from_html(etree.HTML(contents))
 
+# REMOVE begin
 def extract_from_html(tree):
   #for elm in tree.xpath('//font[@color="#00387b"]'):
   for elm in tree.xpath('//table[@cellpadding="5"]//td'):
@@ -28,6 +72,11 @@ def extract_from_html(tree):
     return elm
 
 #/html/body/table/tbody/tr/td/table/tbody/tr[5]/td/table[1]/tbody/tr[3]/td/table/tbody/tr[2]/td[1]/text()
+# REMOVE end
+
+keys = ['cedula', 'full_name', 'first_name', 'second_name', 'first_surname', 'second_surname',
+        'voting', 'state', 'muni', 'parish', 'center', 'table', 'center_address', 'table_member',
+        'cne_date', 'scrape_date']
 
 class CneHtmlParser(HTMLParser.HTMLParser):
   def __init__(self):
@@ -47,24 +96,24 @@ class CneHtmlParser(HTMLParser.HTMLParser):
       'Imprimir',
       'Cerrar']
     self.mapping_keys = {
-      u'Cédula:'.encode('utf-8'): 'cedula',
-      'Nombre:': 'nombre_completo',
-      'Primer Nombre:': 'primer_nombre',
-      'Segundo Nombre:': 'segundo_nombre',
-      'Primer Apellido:': 'primer_apellido',
-      'Segundo Apellido:': 'segundo_apellido',
-      'Estado:': 'estado',
-      'Municipio:': 'municipio',
-      'Parroquia:': 'parroquia',
-      'Centro:': 'centro',
-      'Mesa:': 'mesa',
-      u'Dirección:'.encode('utf-8'): 'direccion_centro',
+      u'Cédula:'.encode('utf-8'): keys[0],
+      'Nombre:': keys[1],
+      'Primer Nombre:': keys[2],
+      'Segundo Nombre:': keys[3],
+      'Primer Apellido:': keys[4],
+      'Segundo Apellido:': keys[5],
+      'Estado:': keys[7],
+      'Municipio:': keys[8],
+      'Parroquia:': keys[9],
+      'Centro:': keys[10],
+      'Mesa:': keys[11],
+      u'Dirección:'.encode('utf-8'): keys[12],
     }
     self.boolean_keys = {
-      u'Esta cédula de identidad no se encuentra inscrito en el Registro Electoral.'.encode('utf-8'): ('registrado', False),
-      u'Usted está habilitado para sufragar en las Elecciones Regionales del 16 de Diciembre de 2012'.encode('utf-8'): ('registrado', True),
-      'Usted NO fue seleccionado para prestar el Servicio Electoral, Elecciones 2012': ('miembro_mesa', False),
-      'Registro Electoral correspondiente al 15 de Abril de 2012.': ('fecha_cne', 'abril 15, 2012'),
+      u'Esta cédula de identidad no se encuentra inscrito en el Registro Electoral.'.encode('utf-8'): (keys[6], False),
+      u'Usted está habilitado para sufragar en las Elecciones Regionales del 16 de Diciembre de 2012'.encode('utf-8'): (keys[6], True),
+      'Usted NO fue seleccionado para prestar el Servicio Electoral, Elecciones 2012': (keys[13], False),
+      'Registro Electoral correspondiente al 15 de Abril de 2012.': (keys[14], 'abril 15, 2012'),
     }
     self.reset()
 
@@ -74,22 +123,7 @@ class CneHtmlParser(HTMLParser.HTMLParser):
     self.current_key = None
     self.output = {}
 
-  def handle_starttag(self, tag, attributes):
-    if tag == 'td':
-      self.tds += 1
-
-  def handle_endtag(self, tag):
-    if tag == 'td': self.tds -= 1
-    if self.tds < 0:
-      print "WARNING: tds less than 0 (%d). Resetting" % self.tds
-      self.tds = 0
-
   def handle_data(self, data):
-    if self.tds <= 0:
-      return
-
-#    print "Found data: ", data, ", ", type(data)
-
     data = data.strip()
     if not data or data in self.ignored_keys:
       return # ignore
@@ -109,13 +143,17 @@ class CneHtmlParser(HTMLParser.HTMLParser):
 
 parser = CneHtmlParser()
 
-html_files = glob.glob(directory + "/*")
+html_files = sorted(glob.glob(directory + "/*"))
 
-for i in range(1, 100):
+out_file = open('out.csv', 'wb')
+writer = csv.DictWriter(out_file, keys)
+writer.writeheader()
+
+for i in range(1, 1000):
   print ""
   parser.feed(read(html_files[i]))
   print parser.output
-  if 'segundo_apellido' in parser.output: print parser.output['segundo_apellido']
+  writer.writerow(parser.output)
   parser.close()
   parser.reset()
   #extract_from_file(html_files[i])

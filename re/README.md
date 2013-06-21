@@ -23,3 +23,7 @@ the CNE put out a RE dump corresponding to May 2010
 * Full *cedulado* registy, including people are are not registered to vote. Scraped from November to December 2012.
 Includes all 27 million Venezuelans with ID cards. Ask me for details.
 
+
+Developer Notes:
+
+lxml's etree parsing was not able to extract the data appropriately, which is why we're using an HTMLParser instead.
