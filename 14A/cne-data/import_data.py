@@ -209,6 +209,9 @@ fill_pcts(data[1])
 fill_voters(data[1], data[0])
 
 print
+print "There are %d states" % len(data[1]['state'])
+print "There are %d munis" % len(data[1]['muni'])
+print "There are %d parishes" % len(data[1]['parish'])
 print "Comparing centers"
 compare_places(data[0]['center'], data[1]['center'])
 print "Comparing tables"

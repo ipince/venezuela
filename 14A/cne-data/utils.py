@@ -47,14 +47,15 @@ def compare_by(votes_arr, pred, exclude=set(), output=False):
 ### Utility plotting functions
 
 # Wraps plt.plot and optionally sets title, axis labels, and saves graph to disk
-def plot_wrap(plotargs, title=None, xlabel=None, ylabel=None, filename=None):
+def plot_wrap(plotargs, title=None, xlabel=None, ylabel=None, labels=None, filename=None):
   plt.ion()
   plt.figure()
-  plt.plot(*plotargs)
+  p = plt.plot(*plotargs)
   if title: plt.title(title)
   if xlabel: plt.xlabel(xlabel)
   if ylabel: plt.ylabel(ylabel)
   plt.grid()
+  if labels: plt.legend(p, labels)
   plt.draw()
   if filename: plt.savefig(filename)
 
