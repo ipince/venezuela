@@ -1,28 +1,33 @@
 # Registro Electoral (RE) data
 
-RE data is taken directly from the CNE, either from dumps provided by the CNE itself, or through a scraper.
-The extracted data is too large to host on GitHub, so it is hosted on Google Drive. Ask me for access.
+I have data dumps of the Registro Electoral, taken at different points in time. Most of the dumps were provided directly by the CNE (Consejo Nacional Electoral). One of them was scraped from their website and is complete and richer in the data that it contains.
 
-The availalable data is the following:
+Here are the datasets and descriptions:
 
-* RE, as of January 2006, by state, including voting centers. Provided by the CNE
-[here](http://www.cne.gov.ve/int_generacion_re/html/index.html). Some states are missing though (404'd when trying
-to download). These are Monagas, Nva Esparta, Portuguesa, Sucre, Tachira, Trujillo, Vargas, Yaracuy, and Zulia.
-Data was downloaded on February 2013.
+### 2006 Snapshot
+This data set is hosted on Google Drive (~150MB). Ask me for access. The dataset was provided by the CNE ([here](http://www.cne.gov.ve/int_generacion_re/html/index.html)), and represents a snapshot of the registry as of 2006. It was downloaded in February 2013. It contains 1 voting center file and 23 per-state zip files:
+* `centros.csv` (9,399 records): voting centers, including center code, state, county, parish, name, address.
+* `RE-CSV-<num>.csv`: each of these files contains the registered voters for one state. It includes ID number, nationality, full name, date of birth, and voting center. There are few missing states, including Monagas, Nva Esparta, Portuguesa, Sucre, Tachira, Trujillo, Vargas, Yaracuy, and Zulia.
 
-* RE, as of August 2008, by state, including voting centers. Provided by the CNE
-[here](http://www.cne.gov.ve/int_generacion_re/agosto2008/). All states and centers were downloaded on February 2013.
+### 2008 Snapshot
+This data set is hosted on Google Drive (~150MB). Ask me for access. The dataset was provided by the CNE ([here](http://www.cne.gov.ve/int_generacion_re/agosto2008/)), and represents a snapshot of the registry as of 2008. It was downloaded in February 2013. It contains 24 per-state zip files:
+* `RE-CSV-<num>.csv`: each of these files contains the registered voters for one state. It includes ID number, nationality, full name, date of birth, and voting center.
+
+### April 2012 Snapshot
+This data set is hosted on Google Drive (~250MB). Ask me for access. The dataset was provided by the CNE ([here](http://www.cne.gov.ve/web/registro_electoral_descarga/abril2012/nacional.php)), and represents a snapshot of the registry as of April 2012. It was downloaded in February 2013. It contains two zip files: `centros.csv` and `nacional.csv`.
+* `centros.csv` (15,298 records): voting centers, including center code, "new" center code, type, state, county, parish, name, address.
+* `nacional.csv` (18,903,143 records): registered voters, including ID number, nationality, name (split into first name, middle name, first surname, second surname), voting center.
+
+### Dec 2012 Snapshot
+This data set is not currently easily accessible. It includes all 27 million Venezuelans that had ID cards at the time it was taken, in December 2012. It includes more data than the previous ones as well, sometimes including address and/or date of death.
+
+---
 
 * According to [this](http://venezuela.politicaenelmundo.com/averiguar-registro-electoral-para-elecciones-en-venezuela/),
 the CNE put out a RE dump corresponding to May 2010
 [here](http://www.cne.gov.ve/web/registro_electoral/mayo_2010/index.html), but I wasn't able to download it (as of Feb 2013).
 
-* RE, as of April 2012, on national level, and including voting centers. Provided by the CNE
-[here](http://www.cne.gov.ve/web/registro_electoral_descarga/abril2012/nacional.php). Downloaded on February 2013.
-
-* Full *cedulado* registy, including people are are not registered to vote. Scraped from November to December 2012.
-Includes all 27 million Venezuelans with ID cards. Ask me for details.
-
+---
 
 Developer Notes:
 
