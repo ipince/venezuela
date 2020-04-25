@@ -16,18 +16,8 @@ import os
 import time
 import csv
 
+from optparse import OptionParser
 from lxml import etree as ET
-
-def read(filepath):
-  with open(filepath, 'r') as f:
-    return f.read()
-
-def read_batch(filepath):
-  with open(filepath, 'r') as f:
-    return f.read().splitlines()
-
-# parse html
-# run xpath queries
 
 XPATH_NAME = '/html/body/form/table[3]/iterator/tr[1]/td/p/b[2]'
 XPATH_WEEKS = '/html/body/form/table[3]/iterator/tr[1]/td/p/b[4]'
@@ -49,7 +39,15 @@ XPATHS = {
   'verification_code': XPATH_CODE
 }
 
+def read(filepath):
+  with open(filepath, 'r') as f:
+    return f.read()
 
+def read_batch(filepath):
+  with open(filepath, 'r') as f:
+    return f.read().splitlines()
+
+# Keep this in sync with the same definition in ivss_scrape.py
 def path(cedula, toplevel):
   # structure is cache/<2-digit-millions>/<3-digit-thousands>
   filled = str(cedula).zfill(9)
@@ -61,9 +59,9 @@ def path(cedula, toplevel):
     os.makedirs(thousands_path)
   return os.path.join(thousands_path, filled[6:] + '.html')
 
-def write_csv(lines):
+def write_csv(lines, filename):
   keys = ['id', 'name', 'affiliation_date', 'status', 'weeks', 'company_id', 'company_name', 'company_start_date', 'company_end_date', 'verification_code', 'scrape_status', 'scrape_timestamp_utc']
-  with open('batch2.csv', 'wb') as outfile:
+  with open(filename, 'wb') as outfile:
     writer = csv.DictWriter(outfile, keys)
     writer.writeheader()
     writer.writerows(lines)
@@ -94,35 +92,58 @@ def extract(tree, output):
 
   return output
 
-lines = []
-
-cedulas = read_batch('batch2.txt')
-#cedulas = [3765654]
-for cedula in cedulas:
+def process_cedula(cedula, root):
   print 'Processing id ' + str(cedula)
-  filepath = path(cedula, 'cache')
+  filepath = path(cedula, root)
   output = {}
   output['id'] = cedula
   output['scrape_timestamp_utc'] = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(os.path.getmtime(filepath)))
 
   content = read(filepath)
-  if 'no tiene Semanas Cotizadas' in content:
+  if not content:
+    output['scrape_status'] = 'blank_page'
+    return output
+  elif 'no tiene Semanas Cotizadas' in content:
     output['weeks'] = 0
     output['scrape_status'] = 'no_weeks'
-    lines.append(output)
-    continue
+    return output
   elif 'es incorrecta' in content:
     output['scrape_status'] = 'not_found'
-    lines.append(output)
-    continue
+    return output
 
   tree = ET.HTML(content)
-
   extract(tree, output)
   output['scrape_status'] = 'success'
-  lines.append(output)
 
-#print lines
+  return output
 
-write_csv(lines)
+def walk(root):
+  cedulas = []
+  for dir, subdirs, files in os.walk(root):
+    prefix = ''.join(dir.split('/')[1:])
+    for filename in files:
+      suffix = filename.split('.')[0]
+      cedula = int(prefix + suffix)
+      cedulas.append(cedula)
+  return cedulas
 
+
+if __name__ == '__main__':
+  parser = OptionParser()
+  parser.add_option("-b", "--batch", dest="batch", type="str")
+  parser.add_option("-d", "--dir", dest="dir", type="str")
+  (options, args) = parser.parse_args()
+
+  if not options.batch and not options.dir:
+    parser.error("Must pass in a batch to process, either by batch name (-b) or by root dir (-d)")
+  if options.batch and options.dir:
+    parser.error("")
+
+  # Find list of input.
+  root = options.batch if options.batch else options.dir
+  cedulas = read_batch(root + '.txt') if options.batch else walk(root)
+  lines = []
+  for cedula in cedulas:
+    lines.append(process_cedula(cedula, root))
+
+  write_csv(lines, root + '.csv')
