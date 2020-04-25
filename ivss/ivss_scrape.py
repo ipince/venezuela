@@ -44,7 +44,7 @@ def scrape_randomly(beg, end, force=False, dry_run=True):
 def scrape(cedulas, directory, force=False, dry_run=True):
   # randomize
   random.shuffle(cedulas)
-  directory = directory if not dry_run else directory + '-dummy'
+  directory = directory + '-cache' if not dry_run else directory + '-dummy'
   for cedula in cedulas:
     # check if already fetched.
     filepath = path(cedula[1], directory)
