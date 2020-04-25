@@ -12,9 +12,16 @@
 # verification code
 # timestamp
 
+# TODO:
+# - parse date properly
+# - extract nationality
+# - read from correct dir
+
 import os
 import time
 import csv
+
+import ivss_utils
 
 from optparse import OptionParser
 from lxml import etree as ET
@@ -42,22 +49,6 @@ XPATHS = {
 def read(filepath):
   with open(filepath, 'r') as f:
     return f.read()
-
-def read_batch(filepath):
-  with open(filepath, 'r') as f:
-    return f.read().splitlines()
-
-# Keep this in sync with the same definition in ivss_scrape.py
-def path(cedula, toplevel):
-  # structure is cache/<2-digit-millions>/<3-digit-thousands>
-  filled = str(cedula).zfill(9)
-  millions_path = os.path.join(toplevel, filled[:3])
-  thousands_path = os.path.join(millions_path, filled[3:6])
-  if not os.path.exists(millions_path):
-    os.makedirs(millions_path)
-  if not os.path.exists(thousands_path):
-    os.makedirs(thousands_path)
-  return os.path.join(thousands_path, filled[6:] + '.html')
 
 def write_csv(lines, filename):
   keys = ['id', 'name', 'affiliation_date', 'status', 'weeks', 'company_id', 'company_name', 'company_start_date', 'company_end_date', 'verification_code', 'scrape_status', 'scrape_timestamp_utc']
@@ -94,7 +85,7 @@ def extract(tree, output):
 
 def process_cedula(cedula, root):
   print 'Processing id ' + str(cedula)
-  filepath = path(cedula, root)
+  filepath = ivs_utils.path(cedula, root)
   output = {}
   output['id'] = cedula
   output['scrape_timestamp_utc'] = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(os.path.getmtime(filepath)))
@@ -141,8 +132,9 @@ if __name__ == '__main__':
 
   # Find list of input.
   root = options.batch if options.batch else options.dir
-  cedulas = read_batch(root + '.txt') if options.batch else walk(root)
+  cedulas = ivss_utils.read_batch(root + '.txt') if options.batch else walk(root)
   lines = []
+
   for cedula in cedulas:
     lines.append(process_cedula(cedula, root))
 

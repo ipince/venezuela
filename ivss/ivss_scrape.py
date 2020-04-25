@@ -8,34 +8,11 @@ import random
 from optparse import OptionParser
 from HTMLParser import HTMLParser
 
+import ivss_utils
+
 SLEEP_TIME_SEC = 1
 HTML = HTMLParser()
 DUMMY_RESPONSE_CONTENT = 'dummy content'
-
-def path(cedula, toplevel):
-  # structure is cache/<2-digit-millions>/<3-digit-thousands>
-  filled = str(cedula).zfill(9)
-  millions_path = os.path.join(toplevel, filled[:3])
-  thousands_path = os.path.join(millions_path, filled[3:6])
-  if not os.path.exists(millions_path):
-    os.makedirs(millions_path)
-  if not os.path.exists(thousands_path):
-    os.makedirs(thousands_path)
-  return os.path.join(thousands_path, filled[6:] + '.html')
-
-def read_batch(filepath):
-  cedulas = [] # list of tuples with (nationality, id)
-  with open(filepath, 'r') as f:
-    lines = f.read().splitlines()
-    for l in lines:
-      parts = l.split('\t')
-      if len(parts) == 2:
-        cedulas.append((parts[0], parts[1]))
-      elif len(parts) == 1: # assume V
-        cedulas.append(('V', l))
-      else:
-        print "Invalid line in file: %s" % (l)
-  return cedulas
 
 def scrape_randomly(beg, end, force=False, dry_run=True):
   cedulas = [('V', x) for x in range(beg, end)]
@@ -47,7 +24,7 @@ def scrape(cedulas, directory, force=False, dry_run=True):
   directory = directory + '-cache' if not dry_run else directory + '-dummy'
   for cedula in cedulas:
     # check if already fetched.
-    filepath = path(cedula[1], directory)
+    filepath = ivss_utils.path(cedula[1], directory)
     if os.path.exists(filepath) and not force:
       print "Reading from cached file: %s" % filepath
       #contents = file(filepath).read()
@@ -90,7 +67,7 @@ if __name__ == '__main__':
       parser.error("-b, and -e must be specified and 'end' must be larger than 'beg'")
 
   if options.input_file:
-    cedulas = read_batch(options.input_file)
+    cedulas = ivss_utils.read_batch(options.input_file)
     scrape(cedulas, options.input_file, force=options.force, dry_run=options.dry_run)
   else:
     scrape(options.beginning, options.end, 'cache', force=options.force, dry_run=options.dry_run)
