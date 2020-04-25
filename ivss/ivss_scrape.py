@@ -8,7 +8,7 @@ import random
 from optparse import OptionParser
 from HTMLParser import HTMLParser
 
-SLEEP_TIME_SEC = 3
+SLEEP_TIME_SEC = 1
 HTML = HTMLParser()
 DUMMY_RESPONSE_CONTENT = 'dummy content'
 
@@ -24,11 +24,21 @@ def path(cedula, toplevel):
   return os.path.join(thousands_path, filled[6:] + '.html')
 
 def read_batch(filepath):
+  cedulas = [] # list of tuples with (nationality, id)
   with open(filepath, 'r') as f:
-    return f.read().splitlines()
+    lines = f.read().splitlines()
+    for l in lines:
+      parts = l.split('\t')
+      if len(parts) == 2:
+        cedulas.append((parts[0], parts[1]))
+      elif len(parts) == 1: # assume V
+        cedulas.append(('V', l))
+      else:
+        print "Invalid line in file: %s" % (l)
+  return cedulas
 
 def scrape_randomly(beg, end, force=False, dry_run=True):
-  cedulas = range(beg, end)
+  cedulas = [('V', x) for x in range(beg, end)]
   scrape(cedulas, directory, force=force, dry_run=dry_run)
  
 def scrape(cedulas, directory, force=False, dry_run=True):
@@ -37,7 +47,7 @@ def scrape(cedulas, directory, force=False, dry_run=True):
   directory = directory if not dry_run else directory + '-dummy'
   for cedula in cedulas:
     # check if already fetched.
-    filepath = path(cedula, directory)
+    filepath = path(cedula[1], directory)
     if os.path.exists(filepath) and not force:
       print "Reading from cached file: %s" % filepath
       #contents = file(filepath).read()
@@ -50,7 +60,7 @@ def fetch(cedula, filepath, sleep=SLEEP_TIME_SEC, dry_run=True):
 
   print "Fetching: " + str(cedula)
 
-  form = {'consultar': 'Buscar', 'nacionalidad': 'V', 'cedula': cedula }
+  form = {'consultar': 'Buscar', 'nacionalidad': cedula[0], 'cedula': cedula[1] }
   start = time.time()
   if dry_run:
     response = DUMMY_RESPONSE_CONTENT
@@ -80,8 +90,7 @@ if __name__ == '__main__':
       parser.error("-b, and -e must be specified and 'end' must be larger than 'beg'")
 
   if options.input_file:
-    first = options.input_file.split(".")[0]
     cedulas = read_batch(options.input_file)
-    scrape(cedulas, first, force=options.force, dry_run=options.dry_run)
+    scrape(cedulas, options.input_file, force=options.force, dry_run=options.dry_run)
   else:
     scrape(options.beginning, options.end, 'cache', force=options.force, dry_run=options.dry_run)
