@@ -12,10 +12,6 @@
 # verification code
 # timestamp
 
-# TODO:
-# - parse date properly
-# - extract nationality
-# - read from correct dir
 
 import os
 import time
@@ -51,11 +47,16 @@ def read(filepath):
     return f.read()
 
 def write_csv(lines, filename):
-  keys = ['id', 'name', 'affiliation_date', 'status', 'weeks', 'company_id', 'company_name', 'company_start_date', 'company_end_date', 'verification_code', 'scrape_status', 'scrape_timestamp_utc']
+  keys = ['id', 'nationality', 'name', 'affiliation_date', 'status', 'weeks', 'company_id', 'company_name', 'company_start_date', 'company_end_date', 'verification_code', 'scrape_status', 'scrape_timestamp_utc']
   with open(filename, 'wb') as outfile:
     writer = csv.DictWriter(outfile, keys)
     writer.writeheader()
     writer.writerows(lines)
+
+def convert_date(d):
+  # Convert from D/M/YYYY to YYYY-MM-DD (string)
+  parts = d.split('/')
+  return '-'.join([parts[2], parts[1].zfill(2), parts[0].zfill(2)])
 
 def extract(tree, output):
   for key in XPATHS:
@@ -75,22 +76,34 @@ def extract(tree, output):
   company_date = output['company_date']
   if 'egreso' in company_date:
     output['company_start_date'] = ''
-    output['company_end_date'] = company_date.replace('fecha de egreso ', '')
+    d = company_date.replace('fecha de egreso ', '')
+    output['company_end_date'] = convert_date(d)
   elif 'ingreso' in company_date:
-    output['company_start_date'] = company_date.replace('fecha de ingreso ', '')
+    d = company_date.replace('fecha de ingreso ', '')
+    output['company_start_date'] = convert_date(d)
     output['company_end_date'] = ''
   del output["company_date"]
 
   return output
 
-def process_cedula(cedula, root):
+def process_cedula(cedula, root, skip=False):
   print 'Processing id ' + str(cedula)
-  filepath = ivs_utils.path(cedula, root)
   output = {}
-  output['id'] = cedula
+
+  filepath = ivss_utils.path(cedula[1], root)
+  try:
+    content = read(filepath)
+  except IOError, e:
+    if skip: # print error and continue
+      print "  Could not find file (%s) for cedula %s" % (filepath, cedula)
+      return output
+    else:
+      raise e
+
+  output['id'] = cedula[1]
+  output['nationality'] = cedula[0]
   output['scrape_timestamp_utc'] = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(os.path.getmtime(filepath)))
 
-  content = read(filepath)
   if not content:
     output['scrape_status'] = 'blank_page'
     return output
@@ -121,21 +134,19 @@ def walk(root):
 
 if __name__ == '__main__':
   parser = OptionParser()
-  parser.add_option("-b", "--batch", dest="batch", type="str")
+  parser.add_option("-i", "--input", dest="input", type="str")
   parser.add_option("-d", "--dir", dest="dir", type="str")
+  parser.add_option("-s", "--skip", dest="skip", action="store_true", help="If true, skip over records in <input> that are not found in <dir>")
   (options, args) = parser.parse_args()
 
-  if not options.batch and not options.dir:
-    parser.error("Must pass in a batch to process, either by batch name (-b) or by root dir (-d)")
-  if options.batch and options.dir:
-    parser.error("")
+  if not options.input or not options.dir:
+    parser.error("Must pass in an input file and a cache directory to process")
 
-  # Find list of input.
-  root = options.batch if options.batch else options.dir
-  cedulas = ivss_utils.read_batch(root + '.txt') if options.batch else walk(root)
+  cedulas = ivss_utils.read_batch(options.input)
   lines = []
-
   for cedula in cedulas:
-    lines.append(process_cedula(cedula, root))
+    data = process_cedula(cedula, options.dir, skip=options.skip)
+    if data: # skip empty records
+      lines.append(data)
 
-  write_csv(lines, root + '.csv')
+  write_csv(lines, options.input + '.csv')
