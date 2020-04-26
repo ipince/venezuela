@@ -1,18 +1,5 @@
 #!/usr/bin/python
 
-# Takes the output of the IVSS and extracts the following data:
-# id
-# name
-# weeks
-# status
-# company_name
-# company_id
-# start_date
-# end_date
-# verification code
-# timestamp
-
-
 import os
 import time
 import csv
@@ -55,7 +42,6 @@ def write_csv(lines, filename):
 
 def convert_date(d):
   # Convert from D/M/YYYY to YYYY-MM-DD (string)
-  print d
   parts = d.split('/')
   return '-'.join([parts[2], parts[1].zfill(2), parts[0].zfill(2)])
 
