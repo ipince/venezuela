@@ -60,8 +60,10 @@ def extract(tree, output):
 
   # clean some of the keys
   output['weeks'] = int(output['weeks'].replace(' semanas cotizadas', ''))
+
   if output['affiliation_date']:
     output['affiliation_date'] = convert_date(output['affiliation_date'])
+
   company_date = output['company_date']
   if 'egreso' in company_date:
     output['company_start_date'] = ''
@@ -72,6 +74,9 @@ def extract(tree, output):
     output['company_start_date'] = convert_date(d)
     output['company_end_date'] = ''
   del output["company_date"]
+
+  if output['verification_code'] == 'null':
+    del output['verification_code']
 
   return output
 
