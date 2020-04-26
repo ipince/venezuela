@@ -2,14 +2,14 @@
 
 import os
 
-# TODO: split on whitespace
-
 def read_batch(filepath):
   cedulas = [] # list of tuples with (nationality, id)
   with open(filepath, 'r') as f:
     lines = f.read().splitlines()
     for l in lines:
-      parts = l.split('\t')
+      if l.startswith('#'):
+        continue
+      parts = l.split()
       if len(parts) == 2:
         cedulas.append((parts[0], parts[1]))
       elif len(parts) == 1: # assume V
