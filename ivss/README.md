@@ -7,7 +7,7 @@ The IVSS has a [website](http://www.ivss.gob.ve:28088/ConstanciaCotizacion/) whe
 of registration (or "constancia") by entering their national id number (or "cedula"). The constancia includes data
 about their work history, including whether they have registered with the IVSS, who their current
 employer is, how many work weeks they have accrued, etc. See `example.html`
-to see what the service returns, and `example_output.csv` to see what these scripts will output.
+to see what the service returns, and `example.csv` to see what these scripts will output.
 
 ## Requirements
 The scripts run on Python 2.7 and use the `requests` and `lxml` libraries.
@@ -43,6 +43,6 @@ $ python ivss_parse.py -b <batch> -d <directory>
 The parser requires both the input file and the cache directory because the html does not contain the nationality of
 the person in question. I wanted to preserve that information in the output file, so that's why the input file is needed.
 
-You should end up with a file like `example_output.csv`!
+You should end up with a file like `example.csv`!
 
 Please contact me (file an issue) if you have any questions.
