@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+import os
+
 def read_batch(filepath):
   cedulas = [] # list of tuples with (nationality, id)
   with open(filepath, 'r') as f:
