@@ -1,12 +1,12 @@
 # IVSS
 
 This is a set of scripts to scrape data from the Venezuelan social security administration
-(IVSS, Instituto Venezolano de los Seguro Sociales).
+(IVSS, Instituto Venezolano de los Seguros Sociales).
 
 The IVSS has a [website](http://www.ivss.gob.ve:28088/ConstanciaCotizacion/) where people can request a proof
 of registration (or "constancia") by entering their national id number (or "cedula"). The constancia includes data
 about their work history, including whether they have registered with the IVSS, who their current
-employer is, how many work weeks they have accrued, etc. See `example_input.html`
+employer is, how many work weeks they have accrued, etc. See `example.html`
 to see what the service returns, and `example_output.csv` to see what these scripts will output.
 
 ## Requirements
@@ -29,7 +29,7 @@ $ split -l 5000 -a 1 <filename> <filename>-
 Scrape each file separately (ideally using different machines). The service takes quite long to respond. If the person
 is registered, the request takes 3-4 seconds; if the person is not registered, it takes ~0.5 seconds. In my experience,
 when using about 1 second of wait time in between requests (in order to not overload the system), processing 5k records
-takes about 6 hours.
+takes about 5 hours.
 ```
 $ time python ivss_scrape.py -i <batch>
 ```
