@@ -55,6 +55,7 @@ def write_csv(lines, filename):
 
 def convert_date(d):
   # Convert from D/M/YYYY to YYYY-MM-DD (string)
+  print d
   parts = d.split('/')
   return '-'.join([parts[2], parts[1].zfill(2), parts[0].zfill(2)])
 
@@ -73,6 +74,8 @@ def extract(tree, output):
 
   # clean some of the keys
   output['weeks'] = int(output['weeks'].replace(' semanas cotizadas', ''))
+  if output['affiliation_date']:
+    output['affiliation_date'] = convert_date(output['affiliation_date'])
   company_date = output['company_date']
   if 'egreso' in company_date:
     output['company_start_date'] = ''
