@@ -1,0 +1,201 @@
+
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<html>
+<head>
+
+<title>Constancia Certificada de Cotizaciones</title>
+
+ <style type="text/css">
+            p {
+                font-family: Arial, Helvetica, sans-serif;
+                font-size: 14px;
+                line-height: 180%;   /*esta es la propiedad para el interlineado*/
+                color: #000;
+                padding: 10px;
+            }
+            body { background-image: url("imagenes/background.jpg");
+                 background-repeat:  no-repeat;
+                 background-attachment: scroll;
+                 background-position:547px 164px
+            }
+
+            div#img {
+                    height: auto;
+                    left: 50%;
+                    margin-left: 322px;
+                    margin-top: -295px;
+                    position: absolute;
+                    top: 50%;
+                    width: 400px;
+            }
+        </style>
+<!-- <link href="../css/estilo.css" rel="stylesheet" type="text/css">-->
+<script type="text/javascript">
+<!--
+function MM_preloadImages() { //v3.0
+  var d=document; if(d.images){ if(!d.MM_p) d.MM_p=new Array();
+    var i,j=d.MM_p.length,a=MM_preloadImages.arguments; for(i=0; i<a.length; i++)
+    if (a[i].indexOf("#")!=0){ d.MM_p[j]=new Image; d.MM_p[j++].src=a[i];}}
+}
+//-->
+
+function back() {
+
+              if (window.opener != null && window.opener != "") {
+                    window.close();
+                } else {
+                    history.back();
+                }
+              }
+              
+function shant(){
+    alert('Esta página no te permite usar el teclado')
+}
+document.onkeydown=shant;
+</script>
+</head>
+<!-- <body background="imagenes/marcaivss.jpg"> -->
+ <body>
+<p>
+  <script LANGUAGE = "JavaScript">
+function quitarFrame(){
+ 	if (self.parent.frames.length != 0)
+ 		self.parent.location = document.location.href;
+}
+	
+quitarFrame()
+</script>
+  <!--****************************Modelo de Datos de la Cuenta*************************-->
+  
+  
+  
+  
+  <!--*********************************************************************************-->
+  
+  
+</p>
+<br>
+<form  name = "frm_Constancia" method="post" action="/ConstanciaCotizacion/ConstanciaPension" >
+<input type="hidden" name="anio" value="2020">
+<input type="hidden" name="mes" value="Abril">
+<input type="hidden" name="dia" value="25">
+<input type="hidden" name="AnioV" value="2020">
+<input type="hidden" name="MesV" value="Abril">
+<input type="hidden" name="DiaV" value="30">
+<input type="hidden" name="codigoVerificacion" value="null">
+<input type="hidden" name="fechaIngEgr" value="fecha de egreso 11/10/2005">
+<input type="hidden" name="fechaPriAfil" value="18/10/1993">
+ <div id="img">
+            <a onclick="history.back();">
+                    <img src="imagenes/icoback1.gif" width="24" height="24" border="0" alt="Retornar">
+            </a>
+        </div>
+        <table align="center" width="52%">
+            <tbody>                
+                <tr>
+                    <td align="center" width="1%" rowspan="2" colspan="1">
+                        <img width="60" height="60" src="imagenes/logopeq_ivss.PNG">
+                    </td>
+                    <td align="center" width="90%" height="18" colspan="4">
+                        <font size="1" face="Verdana" color="#000066"><b> </b></font>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="center" width="52%" height="48" colspan="4">
+                        <font size="1" face="Verdana" color="#000066">
+                            <b>REPÚBLICA BOLIVARIANA DE VENEZUELA<br>
+                               MINISTERIO DEL PODER POPULAR PARA EL PROCESO SOCIAL DEL  TRABAJO <br>
+                               INSTITUTO VENEZOLANO DE LOS SEGUROS SOCIALES<br>
+                               PRESIDENCIA
+                           </b>
+                        </font>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <table align="center" style="margin-top:50px">
+            <tr align="center">
+                <td width="100%"><b><font size="4" face="verdana" color="#000066">CONSTANCIA ELECTRÓNICA DE COTIZACIONES </font></b></td>
+            </tr>
+        </table>
+        <table align="center" style="width:52%; height:auto; margin-top:2%">
+            <s:iterator value="lSolvencia" id="lSolvencia">
+                <tr>
+                    <td width="17px" height="5px" align="justify">
+                        <p>                            
+                            El <b>Instituto  Venezolano de los  Seguros  Sociales (I.V.S.S.)</b>, hace  constar por medio de la presente que  el (la)  Ciudadano (a) 
+                            <b>ALBA PRISCILA RIA?O RUIZ</b>
+                            titular  de  la  Cédula de  Identidad N° <b>15000000</b> posee <b>627 semanas cotizadas</b>
+                            ante el <b>Instituto  Venezolano de los  Seguros  Sociales (I.V.S.S.)</b>, siendo su primera fecha de afiliación al Instituto <b>18/10/1993</b>,
+                            encontrándose actualmente en estatus de asegurado <b>CESANTE</b> en la empresa <b>GERENCIA Y ALIMEN NASSIF</b> inscrita bajo en Número Patronal <b>D22007931</b>
+                            con <b>fecha de egreso 11/10/2005</b> según base de datos de la institución sujeta a revisión de documentos probatorios.
+                         
+                         </p>
+                    </td>
+                 </tr>
+                 
+                 <tr>
+                 
+                 <td width="17%" align="justify">
+                        <p>
+                        En tal sentido, de conformidad con el Artículo N° 1 de la Ley del Seguro Social aprobada bajo Gaceta Oficial N° 5.976 
+                        de fecha 24/05/2010, establece lo siguiente:                        
+                        </p>    
+                  </td>
+                 
+                 </tr>
+                 
+                 <tr>
+                 
+                 <td width="17%" align="justify" style="font-style: italic;">
+                        <p>
+                     		"La presente Ley rige las situaciones y relaciones jurídicas con ocasión de la protección de la Seguridad Social
+                     		 a sus beneficiarios y beneficiarias en las contingencias de maternidad, vejez, sobrevivencia, enfermedad, accidentes,
+                     		 invalidez, muerte, retiro y cesantia o paro forzoso."                       
+                        </p>    
+                  </td>
+                 
+                 </tr>
+                        		
+                 
+                 <tr>
+                 
+                 <td width="17%" align="justify">
+                        <p>
+                            Constancia que se expide a petición de la parte interesada
+                            en la ciudad de Caracas a los <b>25 días del mes de
+                            Abril de 2020.
+                            <b><br><br> El presente certificado tendrá vigencia hasta 
+                            <b>30 de Abril de 2020</b>.
+                 </td>
+                 
+                </tr>
+                <tr><td> </td></tr>
+                <tr align="center">
+                    <td><b><font size="4" face="verdana" color="#000066">Abog. Magaly Gutierrez Viña<br>Presidenta de la Junta Directiva del IVSS</font></b>
+                        <br>
+                        <font size="2" face="verdana" color="#000066">
+                        	Gaceta Oficial N° 41.420 de fecha 15/06/2018.
+
+                            </font>
+                    </td>
+                </tr>
+                 <tr><td> </td></tr>                 
+                <tr>
+                   <td width="17%" align="justify">
+                       
+                            La validez de este certificado electrónico de cotizaciones, puede comprobarse a través del portal web del
+							I.V.S.S. (www.ivss.gob.ve) con el código de verificación <b>null</b><p>
+
+                           </b>.
+                  </td>
+                </tr>
+            </s:iterator>
+        </table>
+
+</br><div align="center"><input type="submit" name="Submit" value="Imprimir Constancia ">
+	 
+	<!-- Realizado por Ing. Ismayer Hernandez  Enero/2015-->  
+</form>	
+</body>
+</html>
