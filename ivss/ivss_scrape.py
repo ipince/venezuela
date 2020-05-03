@@ -36,7 +36,7 @@ def scrape(cedulas, directory, wait=None, force=False, dry_run=True):
       contents = fetch(cedula, filepath, sleep=wait, dry_run=dry_run)
     #print contents
 
-def fetch(cedula, filepath, sleep=SLEEP_TIME_SEC, dry_run=True):
+def fetch(cedula, filepath, sleep=None, dry_run=True):
   URL = 'http://www.ivss.gob.ve:28088/ConstanciaCotizacion/BuscaCotizacionCTRL'
 
   print "Fetching: " + str(cedula)
@@ -57,7 +57,7 @@ def fetch(cedula, filepath, sleep=SLEEP_TIME_SEC, dry_run=True):
   # Back off if the request took too long.
   if elapsed > 6:
     time.sleep(20)
-  time.sleep(sleep)
+  time.sleep(sleep if sleep else SLEEP_TIME_SEC)
   return response
 
 if __name__ == '__main__':
