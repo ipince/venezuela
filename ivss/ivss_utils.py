@@ -13,7 +13,7 @@ def read_batch(filepath):
       if len(parts) == 2:
         cedulas.append((parts[0], parts[1]))
       elif len(parts) == 1: # assume V
-        cedulas.append(('V', l))
+        cedulas.append(('V', int(l)))
       else:
         print "Invalid line in file: %s" % (l)
   return cedulas

@@ -14,8 +14,18 @@ SLEEP_TIME_SEC = 1
 HTML = HTMLParser()
 DUMMY_RESPONSE_CONTENT = 'dummy content'
 
-def scrape_randomly(beg, end, force=False, dry_run=True):
+def scrape_randomly(beg, end, directory, known=None, force=False, dry_run=True):
+  skip = []
+  if known:
+    skip = ivss_utils.read_batch(known)
+  print "found %s ids in skip file" % len(skip)
   cedulas = [('V', x) for x in range(beg, end)]
+  for s in skip:
+    if s[1] >= beg and s[1] < end:
+      try:
+        cedulas.remove(s)
+      except:
+        print 'this shouldnt happen!'
   scrape(cedulas, directory, force=force, dry_run=dry_run)
  
 def scrape(cedulas, directory, force=False, dry_run=True):
@@ -60,6 +70,7 @@ if __name__ == '__main__':
   parser.add_option("-f", "--force", dest="force", action="store_true")
   parser.add_option("-d", "--dry_run", dest="dry_run", action="store_true")
   parser.add_option("-i", "--input", dest="input_file", type="str")
+  parser.add_option("-k", "--known", dest="known", type="str")
   (options, args) = parser.parse_args()
 
   if not options.input_file:
@@ -70,4 +81,4 @@ if __name__ == '__main__':
     cedulas = ivss_utils.read_batch(options.input_file)
     scrape(cedulas, options.input_file, force=options.force, dry_run=options.dry_run)
   else:
-    scrape(options.beginning, options.end, 'cache', force=options.force, dry_run=options.dry_run)
+    scrape_randomly(options.beginning, options.end, 'seq', known=options.known, force=options.force, dry_run=options.dry_run)
