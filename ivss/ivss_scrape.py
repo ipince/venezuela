@@ -15,17 +15,11 @@ HTML = HTMLParser()
 DUMMY_RESPONSE_CONTENT = 'dummy content'
 
 def scrape_randomly(beg, end, directory, known=None, force=False, dry_run=True):
-  skip = []
+  skip = set()
   if known:
-    skip = ivss_utils.read_batch(known)
+    skip.update(ivss_utils.read_batch(known))
   print "found %s ids in skip file" % len(skip)
-  cedulas = [('V', x) for x in range(beg, end)]
-  for s in skip:
-    if s[1] >= beg and s[1] < end:
-      try:
-        cedulas.remove(s)
-      except:
-        print 'this shouldnt happen!'
+  cedulas = [('V', x) for x in range(beg, end) if ('V', x) not in skip]
   scrape(cedulas, directory, force=force, dry_run=dry_run)
  
 def scrape(cedulas, directory, force=False, dry_run=True):
