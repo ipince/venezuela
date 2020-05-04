@@ -122,7 +122,7 @@ def walk(root):
     for filename in files:
       suffix = filename.split('.')[0]
       cedula = int(prefix + suffix)
-      cedulas.append(cedula)
+      cedulas.append(('V', cedula))  # Assume V for dir walks
   return cedulas
 
 
@@ -133,14 +133,20 @@ if __name__ == '__main__':
   parser.add_option("-s", "--skip", dest="skip", action="store_true", help="If true, skip over records in <input> that are not found in <dir>")
   (options, args) = parser.parse_args()
 
-  if not options.input or not options.dir:
-    parser.error("Must pass in an input file and a cache directory to process")
+  if not options.input and not options.dir:
+    parser.error("Must pass in an input file or a cache directory to process")
 
-  cedulas = ivss_utils.read_batch(options.input)
+  if options.input:
+    cedulas = ivss_utils.read_batch(options.input)
+  else:
+    cedulas = walk(options.dir)
+
   lines = []
   for cedula in cedulas:
     data = process_cedula(cedula, options.dir, skip=options.skip)
     if data: # skip empty records
       lines.append(data)
 
-  write_csv(lines, options.input + '.csv')
+  outfile = options.input if options.input else options.dir
+  outfile = outfile.replace("/", "")
+  write_csv(lines, outfile + '.csv')
