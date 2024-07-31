@@ -6,37 +6,42 @@ import (
 	"net/http"
 )
 
-type Response struct {
-	Cedula     string
-	CenterName string
-	ResultsUrl string
+type ResponseErr struct {
+	Error string
 }
 
 func Handler(w http.ResponseWriter, r *http.Request) {
-	cedula := r.URL.Query().Get("c")
-	if cedula == "" {
-		http.Error(w, "missing required param 'c'", http.StatusBadRequest)
-		return
-	}
-
-	resp, err := Handle(cedula)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	jsonResponse, err := json.Marshal(resp)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	w.Header().Set("Content-Type", "application/json")
+
+	cedula := r.URL.Query().Get("cedula")
+	if cedula == "" {
+		writeErr(w, "missing required param 'cedula'", http.StatusBadRequest)
+		return
+	}
+
+	info, err := Handle(cedula)
+	if err != nil {
+		writeErr(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	jsonResponse, err := json.Marshal(info)
+	if err != nil {
+		writeErr(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
 	w.Write(jsonResponse)
 }
 
-func Handle(cedula string) (*Response, error) {
+func writeErr(w http.ResponseWriter, msg string, code int) {
+	resp, _ := json.Marshal(ResponseErr{Error: msg})
+	w.WriteHeader(code)
+	w.Write(resp)
+}
+
+func Handle(cedula string) (*CedulaInfo, error) {
 	info, err := Resolve(cedula)
 	if err != nil {
 		return nil, err
@@ -47,12 +52,9 @@ func Handle(cedula string) (*Response, error) {
 	if err != nil {
 		return nil, err
 	}
+	info.ResultsURL = url
 
 	fmt.Printf("%s -> %s -> %s\n", cedula, info.CenterName, url)
 
-	return &Response{
-		Cedula:     cedula,
-		CenterName: info.CenterName,
-		ResultsUrl: url,
-	}, nil
+	return info, nil
 }

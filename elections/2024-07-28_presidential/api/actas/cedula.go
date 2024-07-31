@@ -7,23 +7,48 @@ import (
 	"net/http"
 
 	"github.com/pkg/errors"
+	"github.com/samber/lo"
 )
 
 var apiEndpoint = "https://gdp.theempire.tech/api/data"
 
 type CedulaInfo struct {
-	Cedula     string
-	CenterName string
+	Cedula string
+
+	// demographic info, omitted for now
+
+	StateID   string
+	StateName string
+
+	CountyID   string
+	CountyName string
+
+	ParishID   string
+	ParishName string
+
+	CenterOldID   string
+	CenterID      string
+	CenterName    string
+	CenterAddress string
+
+	TableID     string
+	TableNumber string
+
+	ActaFilename  string
+	ActaBucketURL string
+	ActaStaticURL string
+
+	ResultsURL string // to be filled later
 }
 
 type ApiResponse struct {
 	Error  string `json:"error"`
 	Person struct {
-		RE_CO_FULLID          string // "V19242561",
-		RE_DS_FIRST_NAME      string // "YILSA",
-		RE_DS_SECOND_NAME     string // "GINNE",
-		RE_DS_FIRST_LASTNAME  string // "VILLEGAS",
-		RE_DS_SECOND_LASTNAME string // "REY",
+		RE_CO_FULLID          string // "V123123",
+		RE_DS_FIRST_NAME      string // "PEPE",
+		RE_DS_SECOND_NAME     string // "JOSE",
+		RE_DS_FIRST_LASTNAME  string // "TRUENO",
+		RE_DS_SECOND_LASTNAME string // "RAYO",
 		RE_CD_GENDER          string // "F",
 		RE_DT_BIRTHDATE       string // "1988-12-16T00:00:00.000Z",
 		RE_CD_STATE           string // "13",
@@ -120,7 +145,27 @@ func fetch(cedula string) (*CedulaInfo, error) {
 	}
 
 	return &CedulaInfo{
-		Cedula:     resp.Person.RE_CO_FULLID,
-		CenterName: resp.Person.PC_DS_CENTER,
+		Cedula: resp.Person.RE_CO_FULLID,
+
+		StateID:   resp.Person.RE_CD_STATE,
+		StateName: resp.Person.ST_DS_STATE,
+
+		CountyID:   resp.Acta.DO_CD_MUN,
+		CountyName: resp.Person.MU_DS_MUN,
+
+		ParishID:   resp.Acta.DO_CD_PAR,
+		ParishName: resp.Person.PA_DS_PAR,
+
+		CenterOldID:   resp.Acta.DO_CD_CENTER,
+		CenterID:      resp.Person.RE_DS_CNE_ID,
+		CenterName:    resp.Person.PC_DS_CENTER,
+		CenterAddress: resp.Person.PC_DS_ADDRESS,
+
+		TableID:     resp.Acta.DO_CD_TABLE,
+		TableNumber: resp.Acta.DO_NU_TABLE,
+
+		ActaFilename:  resp.Acta.DO_DS_NAME,
+		ActaBucketURL: lo.Ternary(resp.Acta.DO_DS_NAME == "", "", fmt.Sprintf("https://elecciones2024ve.s3.amazonaws.com/%s", resp.Acta.DO_DS_NAME)),
+		ActaStaticURL: lo.Ternary(resp.Acta.DO_DS_NAME == "", "", fmt.Sprintf("https://static.resultadosconvzla.com/%s", resp.Acta.DO_DS_NAME)),
 	}, nil
 }
